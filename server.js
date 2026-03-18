@@ -242,6 +242,8 @@ async function actualizarDesdePDF() {
         }
       }
     }
+
+    if (Object.keys(barriosExtraidos).length > 3) {
       // Actualizar FALLBACK en memoria con los nuevos valores
       Object.entries(barriosExtraidos).forEach(([key, precio]) => {
         if (FALLBACK[key]) {
