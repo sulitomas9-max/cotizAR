@@ -44,8 +44,9 @@ async function scrapeZonaPropVenta(page, barrio) {
   const url = `https://www.zonaprop.com.ar/departamentos-venta-${barrio.zpSlug}.html`;
   console.log(`  [ZP venta] ${barrio.nombre}`);
   try {
-    await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
-    await page.waitForSelector('[data-qa="posting-card-price"]', { timeout: 15000 }).catch(() => {});
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
+    await new Promise(r => setTimeout(r, 2000 + Math.random() * 1000));
+    await page.waitForSelector('[data-qa="posting-card-price"]', { timeout: 20000 }).catch(() => {});
     return await page.evaluate(() => {
       const results = [];
       document.querySelectorAll('[data-qa="posting-card"]').forEach(card => {
@@ -78,8 +79,9 @@ async function scrapeZonaPropAlquiler(page, barrio) {
   const url = `https://www.zonaprop.com.ar/departamentos-alquiler-${barrio.zpSlug}.html`;
   console.log(`  [ZP alquiler] ${barrio.nombre}`);
   try {
-    await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
-    await page.waitForSelector('[data-qa="posting-card-price"]', { timeout: 15000 }).catch(() => {});
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
+    await new Promise(r => setTimeout(r, 2000 + Math.random() * 1000));
+    await page.waitForSelector('[data-qa="posting-card-price"]', { timeout: 20000 }).catch(() => {});
     return await page.evaluate(() => {
       const results = [];
       document.querySelectorAll('[data-qa="posting-card"]').forEach(card => {
@@ -114,13 +116,21 @@ async function scrapeArgenpropVenta(barrio) {
   console.log(`  [AP venta] ${barrio.nombre}`);
   try {
     const { data } = await axios.get(url, {
+      method: 'get',
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-        'Accept-Language': 'es-AR,es;q=0.9',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept-Language': 'es-AR,es;q=0.9,en;q=0.8',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
         'Accept-Encoding': 'gzip, deflate, br',
-        'Cache-Control': 'no-cache',
-        'Referer': 'https://www.argenprop.com/',
+        'Cache-Control': 'max-age=0',
+        'Referer': 'https://www.google.com/',
+        'Sec-Ch-Ua': '"Chromium";v="122", "Not(A:Brand";v="24"',
+        'Sec-Ch-Ua-Mobile': '?0',
+        'Sec-Ch-Ua-Platform': '"macOS"',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'cross-site',
+        'Upgrade-Insecure-Requests': '1',
       },
       timeout: 20000,
     });
@@ -155,13 +165,21 @@ async function scrapeArgenpropAlquiler(barrio) {
   console.log(`  [AP alquiler] ${barrio.nombre}`);
   try {
     const { data } = await axios.get(url, {
+      method: 'get',
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-        'Accept-Language': 'es-AR,es;q=0.9',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept-Language': 'es-AR,es;q=0.9,en;q=0.8',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
         'Accept-Encoding': 'gzip, deflate, br',
-        'Cache-Control': 'no-cache',
-        'Referer': 'https://www.argenprop.com/',
+        'Cache-Control': 'max-age=0',
+        'Referer': 'https://www.google.com/',
+        'Sec-Ch-Ua': '"Chromium";v="122", "Not(A:Brand";v="24"',
+        'Sec-Ch-Ua-Mobile': '?0',
+        'Sec-Ch-Ua-Platform': '"macOS"',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'cross-site',
+        'Upgrade-Insecure-Requests': '1',
       },
       timeout: 20000,
     });
@@ -308,26 +326,12 @@ async function scrapeAll() {
 
   await browser.close();
 
-  const output = {
-    ultima_actualizacion: timestamp,
-    total_barrios: Object.keys(resultados).length,
-    barrios: resultados,
-  };
-
-  fs.writeFileSync(CACHE_PATH, JSON.stringify(output, null, 2));
-  console.log(`\n✅ Cache actualizado → ${CACHE_PATH}`);
-  console.log(`   ${Object.keys(resultados).length}/${BARRIOS.length} barrios procesados\n`);
-  return output;
+  await guardarResultados(resultados);
+  console.log(`\n✅ ${Object.keys(resultados).length}/${BARRIOS.length} barrios procesados\n`);
+  return resultados;
 }
 
-function loadCache() {
-  try {
-    if (fs.existsSync(CACHE_PATH)) return JSON.parse(fs.readFileSync(CACHE_PATH, 'utf8'));
-  } catch (e) {}
-  return null;
-}
-
-module.exports = { scrapeAll, loadCache };
+module.exports = { scrapeAll };
 
 if (require.main === module) {
   scrapeAll().catch(console.error);
