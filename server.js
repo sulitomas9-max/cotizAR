@@ -151,6 +151,7 @@ async function actualizarDesdePDF() {
 
     // El PDF de ZonaProp tiene los precios en una tabla donde
     // los números aparecen separados de los nombres de barrios.
+    const barriosExtraidos = {};
     // Buscamos el bloque de "PRECIO MEDIO DE CADA BARRIO" y extraemos los pares.
     const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
 
