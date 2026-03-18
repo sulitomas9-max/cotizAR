@@ -1,8 +1,8 @@
-[phases.setup]
-nixPkgs = ["chromium"]
-
 [phases.install]
-cmds = ["npm install"]
+cmds = [
+  "apt-get update && apt-get install -y chromium --no-install-recommends",
+  "npm install"
+]
 
 [start]
 cmd = "node server.js"
