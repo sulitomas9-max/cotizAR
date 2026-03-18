@@ -114,7 +114,14 @@ async function scrapeArgenpropVenta(barrio) {
   console.log(`  [AP venta] ${barrio.nombre}`);
   try {
     const { data } = await axios.get(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 Chrome/120.0.0.0 Safari/537.36', 'Accept-Language': 'es-AR,es;q=0.9' },
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept-Language': 'es-AR,es;q=0.9',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Cache-Control': 'no-cache',
+        'Referer': 'https://www.argenprop.com/',
+      },
       timeout: 20000,
     });
     const $ = cheerio.load(data);
@@ -148,7 +155,14 @@ async function scrapeArgenpropAlquiler(barrio) {
   console.log(`  [AP alquiler] ${barrio.nombre}`);
   try {
     const { data } = await axios.get(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 Chrome/120.0.0.0 Safari/537.36', 'Accept-Language': 'es-AR,es;q=0.9' },
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept-Language': 'es-AR,es;q=0.9',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Cache-Control': 'no-cache',
+        'Referer': 'https://www.argenprop.com/',
+      },
       timeout: 20000,
     });
     const $ = cheerio.load(data);
@@ -203,11 +217,38 @@ async function scrapeAll() {
 
   const browser = await puppeteer.launch({
     headless: 'new',
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-blink-features=AutomationControlled',
+      '--window-size=1366,768',
+    ],
   });
+
   const page = await browser.newPage();
-  await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36');
-  await page.setExtraHTTPHeaders({ 'Accept-Language': 'es-AR,es;q=0.9' });
+
+  // Ocultar que es un bot
+  await page.evaluateOnNewDocument(() => {
+    Object.defineProperty(navigator, 'webdriver', { get: () => false });
+    Object.defineProperty(navigator, 'plugins', { get: () => [1,2,3] });
+    Object.defineProperty(navigator, 'languages', { get: () => ['es-AR', 'es'] });
+    window.chrome = { runtime: {} };
+  });
+
+  await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
+  await page.setViewport({ width: 1366, height: 768 });
+  await page.setExtraHTTPHeaders({
+    'Accept-Language': 'es-AR,es;q=0.9',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Cache-Control': 'no-cache',
+    'Pragma': 'no-cache',
+    'Sec-Fetch-Dest': 'document',
+    'Sec-Fetch-Mode': 'navigate',
+    'Sec-Fetch-Site': 'none',
+    'Upgrade-Insecure-Requests': '1',
+  });
   const resultados = {};
   const timestamp = new Date().toISOString();
   const cacheActual = await cargarDatos();
@@ -262,7 +303,7 @@ async function scrapeAll() {
       timestamp,
     };
 
-    await new Promise(r => setTimeout(r, 2000 + Math.random() * 1500));
+    await new Promise(r => setTimeout(r, 3000 + Math.random() * 3000));
   }
 
   await browser.close();
