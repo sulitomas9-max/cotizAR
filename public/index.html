@@ -44,10 +44,10 @@
     .field select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234a4840' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; padding-right:32px; }
     .field select:focus, .field input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(200,82,26,.1); }
 
-    .pills { display:flex; gap:6px; flex-wrap:wrap; }
-    .pill { padding:7px 13px; border:1px solid var(--border2); border-radius:20px; font-family:'DM Sans',sans-serif; font-size:13px; cursor:pointer; background:transparent; color:var(--ink2); transition:all .15s; white-space:nowrap; }
-    .pill:hover { border-color:var(--accent2); color:var(--ink); }
-    .pill.on { background:var(--ink); border-color:var(--ink); color:white; font-weight:500; }
+    .pills { display:flex; background:var(--paper); border:1px solid var(--border2); border-radius:var(--radius-sm); padding:3px; gap:2px; }
+    .pill { flex:1; padding:7px 6px; border:none; background:transparent; border-radius:4px; font-family:'DM Sans',sans-serif; font-size:12px; color:var(--ink2); cursor:pointer; transition:all .15s; white-space:nowrap; text-align:center; }
+    .pill:hover { color:var(--ink); background:rgba(15,14,12,.05); }
+    .pill.on { background:white; color:var(--ink); font-weight:500; box-shadow:0 1px 3px rgba(15,14,12,.12),0 0 0 .5px rgba(15,14,12,.08); }
 
     .age-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
     .age-card { padding:10px 12px; border:1px solid var(--border2); border-radius:var(--radius-sm); cursor:pointer; background:var(--paper); transition:all .15s; }
@@ -176,9 +176,9 @@
         <label>Tipo de unidad</label>
         <div class="pills">
           <button class="pill on" onclick="setPill('tipo','depto',this)">Depto</button>
-          <button class="pill" onclick="setPill('tipo','ph',this)">PH −10%</button>
-          <button class="pill" onclick="setPill('tipo','estrenar',this)">A estrenar +12%</button>
-          <button class="pill" onclick="setPill('tipo','pozo',this)">En pozo −12%</button>
+          <button class="pill" onclick="setPill('tipo','ph',this)">PH</button>
+          <button class="pill" onclick="setPill('tipo','estrenar',this)">A estrenar</button>
+          <button class="pill" onclick="setPill('tipo','pozo',this)">En pozo</button>
         </div>
       </div>
     </div>
@@ -235,12 +235,9 @@ const AMS = [
 
 function renderEdad() {
   document.getElementById('age-grid').innerHTML = EDAD.map(a => {
-    const fc = a.f > 0 ? 'f-pos' : a.f < 0 ? 'f-neg' : 'f-neu';
-    const fl = a.f > 0 ? `+${a.f}%` : a.f < 0 ? `${a.f}%` : 'base';
     return `<div class="age-card ${a.key===state.antiguedad?'on':''}" onclick="setEdad('${a.key}',this)">
       <div class="ac-title">${a.label}</div>
       <div class="ac-sub">${a.sub}</div>
-      <span class="ac-badge ${fc}">${fl}</span>
     </div>`;
   }).join('');
 }
@@ -276,8 +273,7 @@ function syncAmSummary() {
   let tot = 0;
   sorted.forEach((a,i) => { tot += a.pct * Math.pow(0.85,i); });
   tot = Math.min(tot, 40);
-  s.innerHTML = `<strong>${sel.length} amenities:</strong> ${sorted.map(a=>a.icon+' '+a.label).join(' · ')}<br>
-    Impacto acumulado estimado: <strong>+${tot.toFixed(1)}%</strong>${tot>=39.5?' (cap máximo aplicado)':''}`;
+  s.innerHTML = `<strong>${sel.length} amenities seleccionados:</strong> ${sorted.map(a=>a.icon+' '+a.label).join(' · ')}`;
   s.classList.add('show');
 }
 
@@ -353,7 +349,7 @@ function renderResults(c) {
     <div class="result-pesos">${ars(v.precio_pesos)} <span style="opacity:.45;font-size:11px">(MEP $${v.dolar_mep.toLocaleString('es-AR')})</span></div>
     <div class="result-badges">
       <span class="badge b-muted">${c.barrio.region}</span>
-      ${aj.diferencia_vs_base_pct!==0 ? `<span class="badge ${aj.diferencia_vs_base_pct>0?'b-up':'b-down'}">${pct(aj.diferencia_vs_base_pct)} vs sin ajustes</span>` : ''}
+      ${aj.diferencia_vs_base_pct!==0 ? `<span class="badge b-muted">${aj.diferencia_vs_base_pct>0?'Por encima':'Por debajo'} del precio base</span>` : ''}
       <span class="badge b-muted">${m.muestras_scraping?m.muestras_scraping+' avisos':m.datos_desde}</span>
     </div>
   </div>`;
@@ -361,7 +357,7 @@ function renderResults(c) {
   // ── Desglose ──
   const fT=aj.factor_tipo, fA=aj.factor_antiguedad, fAm=aj.factor_amenities;
   const sc = p => p>0?'c-pos':p<0?'c-neg':'c-neu';
-  const amenStr = fAm.detalle.length ? fAm.detalle.map(d=>`${d.label} (+${(d.impacto_efectivo*100).toFixed(1)}%)`).join(', ') : 'Ninguno seleccionado';
+  const amenStr = fAm.detalle.length ? fAm.detalle.map(d=>d.label).join(', ') : 'Ninguno seleccionado';
 
   html += `<div class="breakdown-card">
     <div class="card-title">Desglose de ajustes sobre precio/m²</div>
@@ -377,25 +373,25 @@ function renderResults(c) {
       <div class="bdr-left"><span class="bdr-ico">🏠</span>
         <div><div>Tipo: ${fT.label}</div><div class="bdr-sub">Factor ${fT.valor.toFixed(2)}×</div></div>
       </div>
-      <div class="bdr-right ${sc(fT.impacto_pct)}">${fT.impacto_pct!==0?pct(fT.impacto_pct):'—'}</div>
+      <div class="bdr-right ${sc(fT.impacto_pct)}">${fT.impacto_pct!==0?(fT.impacto_pct>0?'Sube':'Baja'):'—'}</div>
     </div>
 
     <div class="bdr">
       <div class="bdr-left"><span class="bdr-ico">🏗️</span>
         <div><div>Antigüedad: ${fA.label}</div><div class="bdr-sub">Factor ${fA.valor.toFixed(2)}×</div></div>
       </div>
-      <div class="bdr-right ${sc(fA.impacto_pct)}">${pct(fA.impacto_pct)}</div>
+      <div class="bdr-right ${sc(fA.impacto_pct)}">${fA.impacto_pct>0?'Sube':fA.impacto_pct<0?'Baja':'Base'}</div>
     </div>
 
     <div class="bdr">
       <div class="bdr-left"><span class="bdr-ico">✨</span>
         <div><div>Amenities (${fAm.detalle.length})</div><div class="bdr-sub">${amenStr}${fAm.cap_aplicado?' · cap 40% aplicado':''}</div></div>
       </div>
-      <div class="bdr-right ${sc(fAm.impacto_pct)}">${fAm.impacto_pct>0?'+':''}${fAm.impacto_pct.toFixed(1)}%</div>
+      <div class="bdr-right ${sc(fAm.impacto_pct)}">${fAm.detalle.length>0?'Sube':'—'}</div>
     </div>
 
     <div class="bdr tot">
-      <div class="bdr-left"><span class="bdr-ico">💰</span><div>Precio final ajustado · factor ${aj.factor_total.toFixed(3)}×</div></div>
+      <div class="bdr-left"><span class="bdr-ico">💰</span><div>Precio final ajustado</div></div>
       <div class="bdr-right c-acc">${usd(v.precio_usd)}</div>
     </div>
   </div>`;
@@ -404,8 +400,8 @@ function renderResults(c) {
   const diffP = ((v.m2_usd - m.promedio_caba_m2) / m.promedio_caba_m2 * 100).toFixed(1);
   html += `<div class="metrics-grid">
     <div class="metric-card"><div class="m-label">Precio/m² ajustado</div><div class="m-value">${usd(v.m2_usd)}</div><div class="m-sub">con todos los factores</div></div>
-    <div class="metric-card"><div class="m-label">Vs. promedio CABA</div><div class="m-value" style="color:${diffP>=0?'var(--accent)':'var(--green)'}">${pct(diffP)}</div><div class="m-sub">mediana: ${usd(m.promedio_caba_m2)}/m²</div></div>
-    <div class="metric-card"><div class="m-label">Impacto ajustes</div><div class="m-value" style="color:${aj.diferencia_vs_base_pct>=0?'var(--accent)':'var(--blue)'}">${pct(aj.diferencia_vs_base_pct)}</div><div class="m-sub">vs precio base barrio</div></div>
+    <div class="metric-card"><div class="m-label">Vs. promedio CABA</div><div class="m-value" style="color:${diffP>=0?'var(--accent)':'var(--green)'}">${diffP>=0?'Por encima':'Por debajo'}</div><div class="m-sub">mediana: ${usd(m.promedio_caba_m2)}/m²</div></div>
+    <div class="metric-card"><div class="m-label">Ajustes aplicados</div><div class="m-value" style="color:${aj.diferencia_vs_base_pct>=0?'var(--accent)':'var(--blue)'}">${aj.diferencia_vs_base_pct>=0?'Aumentan':'Reducen'}</div><div class="m-sub">el precio base del barrio</div></div>
   </div>`;
 
   // ── Barras ──
@@ -429,7 +425,7 @@ function renderResults(c) {
       <div class="alq-grid">
         <div><div class="a-label">Alquiler estimado / mes</div><div class="a-value">${ars(alq.estimado_mes_pesos)}</div></div>
         <div><div class="a-label">Rango de mercado</div><div class="a-value">${ars(alq.min_pesos)} – ${ars(alq.max_pesos)}</div></div>
-        <div><div class="a-label">Rentabilidad bruta anual</div><div class="a-value">${alq.rentabilidad_bruta_anual}%</div></div>
+        <div><div class="a-label">Rentabilidad bruta anual</div><div class="a-value">${alq.rentabilidad_bruta_anual > 5 ? 'Alta' : alq.rentabilidad_bruta_anual > 3.5 ? 'Media' : 'Baja'}</div></div>
         <div><div class="a-label">Años de recupero</div><div class="a-value">${alq.años_recupero} años</div></div>
       </div>
     </div>`;
@@ -437,7 +433,7 @@ function renderResults(c) {
 
   html += `<div class="disclaimer">
     <strong>Fuente:</strong> ZonaProp + Argenprop scraped diariamente · Factores de antigüedad y amenities basados en diferenciales de mercado CABA ·
-    MEP $${v.dolar_mep.toLocaleString('es-AR')} · Precio de oferta publicada — cierre real puede diferir 5–10% · Cotización orientativa.
+    Dólar oficial venta $${v.dolar_mep.toLocaleString('es-AR')} · Precio de oferta publicada · Cotización orientativa.
   </div>`;
 
   document.getElementById('results').innerHTML = html;
