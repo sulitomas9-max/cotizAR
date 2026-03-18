@@ -1,0 +1,5 @@
+[phases.install]
+cmds = ["npm install --prefer-offline || npm install"]
+
+[start]
+cmd = "node server.js"
