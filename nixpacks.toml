@@ -1,8 +1,0 @@
-[phases.setup]
-nixPkgs = ["chromium", "nss", "freetype", "harfbuzz", "ca-certificates", "ttf-dejavu"]
-
-[phases.install]
-cmds = ["npm install", "npx playwright install chromium"]
-
-[start]
-cmd = "node server.js"
