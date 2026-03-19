@@ -486,13 +486,10 @@ initDB().then(async () => {
     });
   });
 
-  // Generar páginas SEO al arrancar si no existen todavía
-  const barrioDir = path.join(__dirname, 'public', 'barrio');
-  if (!require('fs').existsSync(barrioDir)) {
-    console.log('[INICIO] Generando páginas SEO por primera vez...');
-    require('child_process').execFile('node', ['generate-pages.js'], { cwd: __dirname }, (err) => {
-      if (err) console.error('[INICIO] Error generando páginas:', err.message);
-      else console.log('[INICIO] Páginas SEO listas');
-    });
-  }
+  // Generar páginas SEO siempre al arrancar (Railway borra archivos en cada deploy)
+  console.log('[INICIO] Generando páginas SEO...');
+  require('child_process').execFile('node', ['generate-pages.js'], { cwd: __dirname }, (err) => {
+    if (err) console.error('[INICIO] Error generando páginas:', err.message);
+    else console.log('[INICIO] Páginas SEO listas');
+  });
 });
