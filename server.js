@@ -202,11 +202,16 @@ async function actualizarDesdePDF() {
 // ─────────────────────────────────────────────
 
 // Scraping diario — 06:00hs todos los días
+// Después del scraping regenera las páginas estáticas con precios frescos
 cron.schedule('0 6 * * *', async () => {
   console.log('[CRON] Scraping diario iniciado...');
   try {
     await scrapeAll();
-    console.log('[CRON] Scraping diario completado');
+    console.log('[CRON] Scraping completado — regenerando páginas SEO...');
+    require('child_process').execFile('node', ['generate-pages.js'], { cwd: __dirname }, (err) => {
+      if (err) console.error('[CRON] Error generando páginas:', err.message);
+      else console.log('[CRON] Páginas SEO regeneradas con precios del día');
+    });
   } catch (err) {
     console.error('[CRON] Error en scraping diario:', err.message);
   }
@@ -431,6 +436,32 @@ app.post('/api/scrape', async (req, res) => {
   scrapeAll().catch(err => console.error('[Manual scrape]', err.message));
 });
 
+// ─────────────────────────────────────────────
+// RUTAS SEO — páginas estáticas por barrio
+// Generadas con: node generate-pages.js
+// ─────────────────────────────────────────────
+
+// GET /barrios → índice de todos los barrios
+app.get('/barrios', (req, res) => {
+  const file = path.join(__dirname, 'public', 'barrios.html');
+  if (require('fs').existsSync(file)) {
+    res.sendFile(file);
+  } else {
+    res.redirect('/');
+  }
+});
+
+// GET /barrio/:key → página individual del barrio
+app.get('/barrio/:key', (req, res) => {
+  const file = path.join(__dirname, 'public', 'barrio', `${req.params.key}.html`);
+  if (require('fs').existsSync(file)) {
+    res.sendFile(file);
+  } else {
+    res.redirect('/barrios');
+  }
+});
+
+// Catch-all → SPA
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -454,4 +485,14 @@ initDB().then(async () => {
       if (r.status === 'rejected') console.warn(`[INICIO] tarea ${i}:`, r.reason?.message);
     });
   });
+
+  // Generar páginas SEO al arrancar si no existen todavía
+  const barrioDir = path.join(__dirname, 'public', 'barrio');
+  if (!require('fs').existsSync(barrioDir)) {
+    console.log('[INICIO] Generando páginas SEO por primera vez...');
+    require('child_process').execFile('node', ['generate-pages.js'], { cwd: __dirname }, (err) => {
+      if (err) console.error('[INICIO] Error generando páginas:', err.message);
+      else console.log('[INICIO] Páginas SEO listas');
+    });
+  }
 });
