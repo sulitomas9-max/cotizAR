@@ -468,7 +468,6 @@ initDB().then(async () => {
   // Al arrancar: actualizar dólar y PDF en paralelo, sin bloquear el servidor
   Promise.allSettled([
     actualizarDolar(),
-    actualizarDesdePDF(),
   ]).then(results => {
     results.forEach((r, i) => {
       if (r.status === 'rejected') console.warn(`[INICIO] tarea ${i}:`, r.reason?.message);
