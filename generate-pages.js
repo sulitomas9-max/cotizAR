@@ -13,10 +13,10 @@
  *
  * Y ejecutarlo después de cada scraping o una vez al mes.
  */
-
+ 
 const fs = require('fs');
 const path = require('path');
-
+ 
 // ─────────────────────────────────────────────
 // Datos de barrios (mismo FALLBACK que server.js)
 // ─────────────────────────────────────────────
@@ -48,7 +48,7 @@ const BARRIOS = {
   la_boca:          { nombre: 'La Boca',          m2_mediana: 1560, m2_min: 1150, m2_max: 2000, region: 'Sur' },
   lugano:           { nombre: 'Lugano',           m2_mediana: 1098, m2_min:  830, m2_max: 1420, region: 'Sur' },
 };
-
+ 
 // Descripción de cada región para el contenido de la página
 const DESCRIPCIONES_REGION = {
   'Corredor Norte': 'zona de mayor valor inmobiliario de Buenos Aires, con alta demanda y edificios premium',
@@ -59,7 +59,7 @@ const DESCRIPCIONES_REGION = {
   'Sur-Este': 'barrios con precios moderados y potencial de revalorización',
   'Sur': 'zona con precios de entrada al mercado porteño y proyectos de renovación urbana',
 };
-
+ 
 // Descripción específica por barrio para el meta description y el h2
 const DESCRIPCIONES_BARRIO = {
   puerto_madero:    'barrio más exclusivo de Buenos Aires, con torres premium frente al Río de la Plata',
@@ -89,14 +89,14 @@ const DESCRIPCIONES_BARRIO = {
   la_boca:          'barrio icónico con alta demanda turística y proyectos de renovación',
   lugano:           'zona con los precios más accesibles de CABA y proyectos de mejora urbana',
 };
-
+ 
 const fmt = n => n.toLocaleString('es-AR');
-
+ 
 function generarPaginaBarrio(key, b) {
   const descRegion = DESCRIPCIONES_REGION[b.region] || b.region;
   const descBarrio = DESCRIPCIONES_BARRIO[key] || `barrio de Buenos Aires con precios desde USD ${fmt(b.m2_min)}/m²`;
   const año = new Date().getFullYear();
-
+ 
   // Calcular ejemplos de cotización para 3 superficies típicas
   const ejemplos = [40, 55, 75].map(m2 => ({
     m2,
@@ -104,7 +104,7 @@ function generarPaginaBarrio(key, b) {
     min: Math.round(b.m2_min * m2),
     max: Math.round(b.m2_max * m2),
   }));
-
+ 
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -118,7 +118,7 @@ function generarPaginaBarrio(key, b) {
   <link rel="canonical" href="https://cotizar.ar/barrio/${key}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
-
+ 
   <!-- Schema.org estructurado para Google -->
   <script type="application/ld+json">
   {
@@ -137,7 +137,7 @@ function generarPaginaBarrio(key, b) {
     }
   }
   </script>
-
+ 
   <style>
     :root {
       --ink: #0f0e0c; --ink2: #4a4840; --ink3: #9a9790;
@@ -147,23 +147,23 @@ function generarPaginaBarrio(key, b) {
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(--ink); }
-
+ 
     nav { display:flex; align-items:center; justify-content:space-between; padding:16px 40px; border-bottom:1px solid var(--border); background:var(--paper); }
     .logo { font-family:'DM Serif Display',serif; font-size:22px; }
     .logo span { color:var(--accent); }
     .nav-back { font-size:13px; color:var(--ink3); text-decoration:none; display:flex; align-items:center; gap:5px; }
     .nav-back:hover { color:var(--ink); }
-
+ 
     .container { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
-
+ 
     .breadcrumb { font-size:12px; color:var(--ink3); margin-bottom:24px; display:flex; align-items:center; gap:6px; }
     .breadcrumb a { color:var(--ink3); text-decoration:none; }
     .breadcrumb a:hover { color:var(--ink); }
-
+ 
     h1 { font-family:'DM Serif Display',serif; font-size:40px; line-height:1.1; letter-spacing:-.5px; margin-bottom:12px; }
     h1 em { font-style:italic; color:var(--accent); }
     .intro { font-size:15px; color:var(--ink2); line-height:1.65; margin-bottom:36px; max-width:560px; }
-
+ 
     /* Precio principal */
     .price-hero { background:var(--ink); border-radius:16px; padding:28px 32px; margin-bottom:24px; color:white; }
     .price-label { font-size:11px; color:rgba(255,255,255,.45); text-transform:uppercase; letter-spacing:.7px; margin-bottom:8px; }
@@ -171,7 +171,7 @@ function generarPaginaBarrio(key, b) {
     .price-range { font-size:14px; color:rgba(255,255,255,.5); margin-bottom:16px; }
     .price-badges { display:flex; gap:8px; flex-wrap:wrap; }
     .pbadge { font-size:11px; padding:3px 10px; border-radius:20px; background:rgba(255,255,255,.1); color:rgba(255,255,255,.65); }
-
+ 
     /* Tabla de ejemplos */
     .section-title { font-size:11px; font-weight:500; text-transform:uppercase; letter-spacing:.7px; color:var(--ink3); margin-bottom:16px; padding-bottom:8px; border-bottom:1px solid var(--border); }
     .examples-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:32px; }
@@ -179,13 +179,13 @@ function generarPaginaBarrio(key, b) {
     .ex-m2 { font-size:12px; color:var(--ink3); margin-bottom:6px; }
     .ex-price { font-family:'DM Serif Display',serif; font-size:22px; color:var(--ink); margin-bottom:4px; }
     .ex-range { font-size:11px; color:var(--ink3); }
-
+ 
     /* Info del barrio */
     .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:32px; }
     .info-card { background:white; border:1px solid var(--border2); border-radius:10px; padding:16px 18px; }
     .info-label { font-size:11px; color:var(--ink3); text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px; }
     .info-val { font-size:16px; font-weight:500; color:var(--ink); }
-
+ 
     /* FAQ */
     .faq { margin-bottom:40px; }
     .faq h2 { font-family:'DM Serif Display',serif; font-size:24px; margin-bottom:20px; }
@@ -193,16 +193,16 @@ function generarPaginaBarrio(key, b) {
     .faq-item:last-child { border-bottom:none; }
     .faq-q { font-size:15px; font-weight:500; color:var(--ink); margin-bottom:8px; }
     .faq-a { font-size:14px; color:var(--ink2); line-height:1.65; }
-
+ 
     /* CTA */
     .cta-box { background:var(--accent-light); border:1px solid rgba(200,82,26,.2); border-radius:14px; padding:28px 32px; text-align:center; }
     .cta-box h3 { font-family:'DM Serif Display',serif; font-size:24px; margin-bottom:8px; }
     .cta-box p { font-size:14px; color:var(--ink2); margin-bottom:20px; }
     .cta-btn { display:inline-block; background:var(--ink); color:white; text-decoration:none; padding:12px 28px; border-radius:8px; font-size:14px; font-weight:500; transition:background .2s; }
     .cta-btn:hover { background:var(--accent); }
-
+ 
     footer { text-align:center; padding:28px; font-size:12px; color:var(--ink3); border-top:1px solid var(--border); }
-
+ 
     @media(max-width:600px) {
       nav { padding:12px 16px; }
       .container { padding:32px 16px 64px; }
@@ -214,18 +214,18 @@ function generarPaginaBarrio(key, b) {
   </style>
 </head>
 <body>
-
+ 
 <nav>
   <div class="logo">Cotiz<span>AR</span></div>
   <a href="/" class="nav-back">← Cotizá tu depto</a>
 </nav>
-
+ 
 <div class="container">
-
+ 
   <div class="breadcrumb">
     <a href="/">CotizAR</a> › <a href="/barrios">Barrios</a> › ${b.nombre}
   </div>
-
+ 
   <h1>Precio del m² en <em>${b.nombre}</em></h1>
   <p class="intro">
     ${b.nombre} es ${descBarrio}, parte del ${b.region} de Buenos Aires.
@@ -233,7 +233,7 @@ function generarPaginaBarrio(key, b) {
     con valores que oscilan entre USD ${fmt(b.m2_min)} y USD ${fmt(b.m2_max)} según tipo, antigüedad y amenities.
     Datos actualizados con scraping diario de ZonaProp.
   </p>
-
+ 
   <!-- Precio hero -->
   <div class="price-hero">
     <div class="price-label">Precio mediano del m² · ${b.nombre} · ${año}</div>
@@ -245,7 +245,7 @@ function generarPaginaBarrio(key, b) {
       <span class="pbadge">Mediana con filtro IQR</span>
     </div>
   </div>
-
+ 
   <!-- Ejemplos por superficie -->
   <div class="section-title">Cotizaciones de referencia por superficie</div>
   <div class="examples-grid">
@@ -256,7 +256,7 @@ function generarPaginaBarrio(key, b) {
       <div class="ex-range">USD ${fmt(e.min)} – ${fmt(e.max)}</div>
     </div>`).join('')}
   </div>
-
+ 
   <!-- Info del barrio -->
   <div class="section-title">Datos del barrio</div>
   <div class="info-grid">
@@ -277,11 +277,11 @@ function generarPaginaBarrio(key, b) {
       <div class="info-val">USD ${fmt(b.m2_max)}/m²</div>
     </div>
   </div>
-
+ 
   <!-- FAQ estructurado para SEO -->
   <div class="faq">
     <h2>Preguntas frecuentes sobre ${b.nombre}</h2>
-
+ 
     <div class="faq-item">
       <div class="faq-q">¿Cuánto cuesta el metro cuadrado en ${b.nombre} en ${año}?</div>
       <div class="faq-a">
@@ -291,7 +291,7 @@ function generarPaginaBarrio(key, b) {
         y se actualizan diariamente.
       </div>
     </div>
-
+ 
     <div class="faq-item">
       <div class="faq-q">¿Cuánto vale un departamento de 50 m² en ${b.nombre}?</div>
       <div class="faq-a">
@@ -301,7 +301,7 @@ function generarPaginaBarrio(key, b) {
         USD ${fmt(Math.round(b.m2_max * 50))}. Usá el cotizador para una estimación personalizada.
       </div>
     </div>
-
+ 
     <div class="faq-item">
       <div class="faq-q">¿Cómo se compara ${b.nombre} con el promedio de CABA?</div>
       <div class="faq-a">
@@ -309,7 +309,7 @@ function generarPaginaBarrio(key, b) {
         se ubica ${b.m2_mediana > 2450 ? `un ${Math.round((b.m2_mediana/2450-1)*100)}% por encima del promedio porteño, siendo ${descRegion}` : `un ${Math.round((1-b.m2_mediana/2450)*100)}% por debajo del promedio porteño, siendo ${descRegion}`}.
       </div>
     </div>
-
+ 
     <div class="faq-item">
       <div class="faq-q">¿Qué factores afectan el precio en ${b.nombre}?</div>
       <div class="faq-a">
@@ -319,38 +319,44 @@ function generarPaginaBarrio(key, b) {
       </div>
     </div>
   </div>
-
+ 
   <!-- CTA -->
   <div class="cta-box">
     <h3>Cotizá tu depto en ${b.nombre}</h3>
     <p>Ingresá los m², antigüedad y amenities para obtener una cotización personalizada con datos reales.</p>
     <a href="/?barrio=${key}" class="cta-btn">Cotizar ahora →</a>
   </div>
-
+ 
 </div>
-
+ 
 <footer>
   CotizAR · Scraping diario de ZonaProp · Mediana con filtro IQR · Precio de oferta publicada · Cotización orientativa
 </footer>
-
+ 
 </body>
 </html>`;
 }
-
+ 
 function generarPaginaBarrios() {
   const grupos = {};
   Object.entries(BARRIOS).forEach(([key, b]) => {
     if (!grupos[b.region]) grupos[b.region] = [];
     grupos[b.region].push({ key, ...b });
   });
-
+ 
+  const año = new Date().getFullYear();
+  const medianas = Object.values(BARRIOS).map(b => b.m2_mediana);
+  const precioMin = fmt(Math.min(...medianas));
+  const precioMax = fmt(Math.max(...medianas));
+  const metaDesc = 'Precio del metro cuadrado en todos los barrios de Buenos Aires en ' + año + '. Desde USD ' + precioMin + '/m\u00b2 en Lugano hasta USD ' + precioMax + '/m\u00b2 en Puerto Madero. Datos reales de ZonaProp.';
+ 
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Precio m² por barrio en CABA ${new Date().getFullYear()} — CotizAR</title>
-  <meta name="description" content="Precio del metro cuadrado en todos los barrios de Buenos Aires en ${new Date().getFullYear()}. Desde USD ${fmt(Math.min(...Object.values(BARRIOS).map(b=>b.m2_mediana))})/m² en Lugano hasta USD ${fmt(Math.max(...Object.values(BARRIOS).map(b=>b.m2_mediana)))}/m² en Puerto Madero. Datos reales de ZonaProp.">
+  <meta name="description" content="${metaDesc}">
   <link rel="canonical" href="https://cotizar.ar/barrios">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
@@ -393,7 +399,7 @@ function generarPaginaBarrios() {
 <div class="container">
   <h1>Precio del m² por <em>barrio</em> en CABA</h1>
   <p class="intro">Precios medianos de departamentos en venta en todos los barrios de Buenos Aires, actualizados diariamente con datos de ZonaProp. Hacé clic en cualquier barrio para ver el detalle y ejemplos de cotización.</p>
-
+ 
   ${Object.entries(grupos).map(([region, barrios]) => `
     <div class="region-title">${region}</div>
     <div class="barrios-grid">
@@ -405,7 +411,7 @@ function generarPaginaBarrios() {
       </a>`).join('')}
     </div>
   `).join('')}
-
+ 
   <div class="cta-box">
     <h3>Cotizá tu departamento</h3>
     <p>Seleccioná tu barrio, los m² y los amenities para obtener una cotización personalizada.</p>
@@ -416,7 +422,7 @@ function generarPaginaBarrios() {
 </body>
 </html>`;
 }
-
+ 
 function generarSitemap() {
   const base = 'https://cotizar.ar';
   const hoy = new Date().toISOString().split('T')[0];
@@ -429,7 +435,7 @@ function generarSitemap() {
       priority: '0.8',
     })),
   ];
-
+ 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls.map(u => `  <url>
@@ -440,20 +446,20 @@ ${urls.map(u => `  <url>
   </url>`).join('\n')}
 </urlset>`;
 }
-
+ 
 // ─────────────────────────────────────────────
 // MAIN — generar todos los archivos
 // ─────────────────────────────────────────────
 function main() {
   const publicDir = path.join(__dirname, 'public');
   const barrioDir = path.join(publicDir, 'barrio');
-
+ 
   // Crear carpeta public/barrio si no existe
   if (!fs.existsSync(barrioDir)) {
     fs.mkdirSync(barrioDir, { recursive: true });
     console.log('📁 Creada carpeta public/barrio/');
   }
-
+ 
   // Generar página por barrio
   let count = 0;
   for (const [key, b] of Object.entries(BARRIOS)) {
@@ -462,25 +468,25 @@ function main() {
     console.log(`  ✓ /barrio/${key} — ${b.nombre} · USD ${fmt(b.m2_mediana)}/m²`);
     count++;
   }
-
+ 
   // Generar página índice de barrios
   const barriosHtml = generarPaginaBarrios();
   fs.writeFileSync(path.join(publicDir, 'barrios.html'), barriosHtml, 'utf8');
   console.log(`  ✓ /barrios — índice de ${count} barrios`);
-
+ 
   // Generar sitemap.xml
   const sitemap = generarSitemap();
   fs.writeFileSync(path.join(publicDir, 'sitemap.xml'), sitemap, 'utf8');
   console.log(`  ✓ sitemap.xml — ${count + 2} URLs`);
-
+ 
   // Generar robots.txt si no existe
   const robotsPath = path.join(publicDir, 'robots.txt');
   if (!fs.existsSync(robotsPath)) {
     fs.writeFileSync(robotsPath, `User-agent: *\nAllow: /\nSitemap: https://cotizar.ar/sitemap.xml\n`, 'utf8');
     console.log('  ✓ robots.txt');
   }
-
+ 
   console.log(`\n✅ ${count} páginas de barrios + índice + sitemap generados en public/\n`);
 }
-
+ 
 main();
