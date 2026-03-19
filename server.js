@@ -112,7 +112,18 @@ const FALLBACK = {
 // HELPERS
 // ─────────────────────────────────────────────
 async function getMergedData() {
-  return { data: { ...FALLBACK }, cache: null, dolarMep: getDolarMep() };
+  const cache = await cargarDatos();
+  const merged = { ...FALLBACK };
+
+  if (cache?.barrios) {
+    for (const [key, data] of Object.entries(cache.barrios)) {
+      if (merged[key]) {
+        merged[key] = { ...merged[key], ...data, alq_ratio: merged[key].alq_ratio };
+      }
+    }
+  }
+
+  return { data: merged, cache, dolarMep: getDolarMep() };
 }
 
 // ─────────────────────────────────────────────
@@ -192,7 +203,7 @@ async function actualizarDesdePDF() {
 
 // Scraping diario — 06:00hs todos los días
 // Después del scraping regenera las páginas estáticas con precios frescos
-cron.schedule('0 6 31 2 *', async () => {
+cron.schedule('0 6 * * *', async () => {
   console.log('[CRON] Scraping diario iniciado...');
   try {
     await scrapeAll();
