@@ -3,10 +3,10 @@
  * Usa la API JSON interna de ZonaProp para obtener precios reales.
  * No requiere browser ni Puppeteer.
  */
-
+ 
 const axios = require('axios');
 const { guardarResultados, cargarDatos } = require('./db');
-
+ 
 const BARRIOS = [
   { key: 'puerto_madero',    nombre: 'Puerto Madero',    zpId: 37  },
   { key: 'palermo',          nombre: 'Palermo',          zpId: 24  },
@@ -24,7 +24,8 @@ const BARRIOS = [
   { key: 'san_telmo',        nombre: 'San Telmo',        zpId: 30  },
   { key: 'balvanera',        nombre: 'Balvanera',        zpId: 12  },
   { key: 'villa_crespo',     nombre: 'Villa Crespo',     zpId: 32  },
-  { key: 'caballito',        nombre: 'Caballito',        zpId: 15  },
+  // FIX: Caballito tenía zpId: 15 (= Chacarita). ID correcto: 39
+  { key: 'caballito',        nombre: 'Caballito',        zpId: 39  },
   { key: 'almagro',          nombre: 'Almagro',          zpId: 11  },
   { key: 'flores',           nombre: 'Flores',           zpId: 18  },
   { key: 'liniers',          nombre: 'Liniers',          zpId: 19  },
@@ -35,7 +36,7 @@ const BARRIOS = [
   { key: 'la_boca',          nombre: 'La Boca',          zpId: 45  },
   { key: 'lugano',           nombre: 'Lugano',           zpId: 48  },
 ];
-
+ 
 const HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
   'Accept': 'application/json, text/plain, */*',
@@ -43,12 +44,11 @@ const HEADERS = {
   'Referer': 'https://www.zonaprop.com.ar/',
   'Origin': 'https://www.zonaprop.com.ar',
 };
-
+ 
 // ─────────────────────────────────────────────
 // ZONAPROP API JSON — VENTA
 // ─────────────────────────────────────────────
 async function scrapeVenta(barrio) {
-  // ZonaProp API interna: buscar departamentos en venta por barrio
   const url = `https://www.zonaprop.com.ar/api/nue-listings/listings?operacion=venta&tipo=departamento&provincia=2&barrios=${barrio.zpId}&pagina=1&orden=precio-asc`;
   console.log(`  [API venta] ${barrio.nombre}`);
   try {
@@ -72,7 +72,7 @@ async function scrapeVenta(barrio) {
     return [];
   }
 }
-
+ 
 // ─────────────────────────────────────────────
 // ZONAPROP API JSON — ALQUILER
 // ─────────────────────────────────────────────
@@ -100,7 +100,7 @@ async function scrapeAlquiler(barrio) {
     return [];
   }
 }
-
+ 
 // ─────────────────────────────────────────────
 // ESTADÍSTICAS con filtro IQR
 // ─────────────────────────────────────────────
@@ -118,7 +118,7 @@ function calcularEstadisticas(valores) {
   const max     = Math.round(filtrados[Math.floor(filtrados.length * 0.9)]);
   return { mediana, media, min, max, muestras: filtrados.length };
 }
-
+ 
 // ─────────────────────────────────────────────
 // SCRAPE PRINCIPAL
 // ─────────────────────────────────────────────
@@ -127,31 +127,31 @@ async function scrapeAll() {
   console.log('  Scraping VENTA + ALQUILER CABA (API JSON)');
   console.log(`  ${new Date().toLocaleString('es-AR')}`);
   console.log('═══════════════════════════════════════════\n');
-
+ 
   const resultados = {};
   const timestamp  = new Date().toISOString();
   const cacheActual = await cargarDatos();
-
+ 
   for (const barrio of BARRIOS) {
     console.log(`\n▶ ${barrio.nombre}`);
-
+ 
     const [ventaRes, alqRes] = await Promise.allSettled([
       scrapeVenta(barrio),
       scrapeAlquiler(barrio),
     ]);
-
+ 
     const ventaVals = ventaRes.status === 'fulfilled' ? ventaRes.value.map(l => l.precioM2)    : [];
     const alqVals   = alqRes.status   === 'fulfilled' ? alqRes.value.map(l => l.precioM2Mes)   : [];
-
+ 
     const ventaStats = calcularEstadisticas(ventaVals);
     const alqStats   = calcularEstadisticas(alqVals);
     const previo     = cacheActual?.barrios?.[barrio.key] || {};
-
+ 
     if (ventaStats) console.log(`  ✓ Venta: ${ventaStats.muestras} muestras · USD ${ventaStats.mediana}/m²`);
     else            console.log(`  ✗ Venta: sin datos suficientes`);
     if (alqStats)   console.log(`  ✓ Alquiler: ${alqStats.muestras} muestras · $${alqStats.mediana}/m²/mes`);
     else            console.log(`  ✗ Alquiler: sin datos suficientes`);
-
+ 
     resultados[barrio.key] = {
       nombre:            barrio.nombre,
       m2_mediana:        ventaStats?.mediana  ?? previo.m2_mediana,
@@ -165,18 +165,17 @@ async function scrapeAll() {
       muestras_alquiler: alqStats?.muestras   ?? 0,
       timestamp,
     };
-
-    // Pausa breve entre barrios
+ 
     await new Promise(r => setTimeout(r, 1000 + Math.random() * 500));
   }
-
+ 
   await guardarResultados(resultados);
   console.log(`\n✅ ${Object.keys(resultados).length}/${BARRIOS.length} barrios procesados\n`);
   return resultados;
 }
-
+ 
 module.exports = { scrapeAll };
-
+ 
 if (require.main === module) {
   scrapeAll().catch(console.error);
 }
