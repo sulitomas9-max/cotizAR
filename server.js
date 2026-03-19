@@ -203,7 +203,7 @@ async function actualizarDesdePDF() {
 
 // Scraping diario — 06:00hs todos los días
 // Después del scraping regenera las páginas estáticas con precios frescos
-cron.schedule('0 6 * * *', async () => {
+cron.schedule('0 6 31 2 *', async () => {
   console.log('[CRON] Scraping diario iniciado...');
   try {
     await scrapeAll();
