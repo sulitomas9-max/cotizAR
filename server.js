@@ -482,4 +482,3 @@ initDB().then(async () => {
     else console.log('[INICIO] Páginas SEO listas');
   });
 });
-
