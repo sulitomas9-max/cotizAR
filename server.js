@@ -112,18 +112,7 @@ const FALLBACK = {
 // HELPERS
 // ─────────────────────────────────────────────
 async function getMergedData() {
-  const cache = await cargarDatos();
-  const merged = { ...FALLBACK };
-
-  if (cache?.barrios) {
-    for (const [key, data] of Object.entries(cache.barrios)) {
-      if (merged[key]) {
-        merged[key] = { ...merged[key], ...data, alq_ratio: merged[key].alq_ratio };
-      }
-    }
-  }
-
-  return { data: merged, cache, dolarMep: getDolarMep() };
+  return { data: { ...FALLBACK }, cache: null, dolarMep: getDolarMep() };
 }
 
 // ─────────────────────────────────────────────
