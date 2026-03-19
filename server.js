@@ -192,8 +192,8 @@ async function actualizarDesdePDF() {
 
 // Scraping diario — 06:00hs todos los días
 // Después del scraping regenera las páginas estáticas con precios frescos
+cron.schedule('0 6 * * *', async () => {
   console.log('[CRON] Scraping diario iniciado...');
-// cron.schedule('0 10 5 * *', async () => {
   try {
     await scrapeAll();
     console.log('[CRON] Scraping completado — regenerando páginas SEO...');
@@ -212,11 +212,10 @@ cron.schedule('0 9 * * *', async () => {
   await actualizarDolar();
 });
 
-// Actualización PDF ZonaProp — día 5 de cada mes a las 10:00hs
-cron.schedule('0 10 5 * *', async () => {
-  console.log('[CRON] Actualizando datos desde ZonaProp PDF mensual...');
-  await actualizarDesdePDF();
-});
+// Actualización PDF ZonaProp — desactivado temporalmente
+// cron.schedule('0 10 5 * *', async () => {
+//   await actualizarDesdePDF();
+// });
 
 // ─────────────────────────────────────────────
 // FACTORES DE AJUSTE
