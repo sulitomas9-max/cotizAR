@@ -2,16 +2,17 @@
  * db.js
  * Usa cache.json como almacenamiento. No requiere PostgreSQL.
  */
-
+ 
 const fs = require('fs');
 const path = require('path');
-
+ 
 const CACHE_PATH = path.join(__dirname, 'cache.json');
-
+const LOGS_PATH  = path.join(__dirname, 'cotizaciones.json');
+ 
 async function initDB() {
   console.log('[DB] Usando cache.json como almacenamiento');
 }
-
+ 
 async function guardarResultados(resultados) {
   const timestamp = new Date().toISOString();
   const output = {
@@ -22,7 +23,7 @@ async function guardarResultados(resultados) {
   fs.writeFileSync(CACHE_PATH, JSON.stringify(output, null, 2));
   console.log('[DB] Guardado en cache.json');
 }
-
+ 
 async function cargarDatos() {
   try {
     if (fs.existsSync(CACHE_PATH)) {
@@ -31,7 +32,7 @@ async function cargarDatos() {
   } catch (e) {}
   return null;
 }
-
+ 
 async function getStatus() {
   try {
     if (fs.existsSync(CACHE_PATH)) {
@@ -41,5 +42,27 @@ async function getStatus() {
   } catch (e) {}
   return { existe: false, storage: 'archivo' };
 }
-
-module.exports = { initDB, guardarResultados, cargarDatos, getStatus };
+ 
+async function guardarCotizacion(datos) {
+  try {
+    let logs = [];
+    if (fs.existsSync(LOGS_PATH)) {
+      logs = JSON.parse(fs.readFileSync(LOGS_PATH, 'utf8'));
+    }
+    logs.push({ ...datos, timestamp: new Date().toISOString() });
+    fs.writeFileSync(LOGS_PATH, JSON.stringify(logs, null, 2));
+  } catch (e) {
+    console.error('[DB] Error guardando cotización:', e.message);
+  }
+}
+ 
+async function obtenerCotizaciones() {
+  try {
+    if (fs.existsSync(LOGS_PATH)) {
+      return JSON.parse(fs.readFileSync(LOGS_PATH, 'utf8'));
+    }
+  } catch (e) {}
+  return [];
+}
+ 
+module.exports = { initDB, guardarResultados, cargarDatos, getStatus, guardarCotizacion, obtenerCotizaciones };
