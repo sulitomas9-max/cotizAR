@@ -16,7 +16,7 @@
  *   DOLAR_MEP=1300                  (tipo de cambio manual, opcional)
  *   ANTHROPIC_API_KEY=sk-ant-...    (para /api/noticias)
  */
-
+ 
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -24,17 +24,17 @@ const cron = require('node-cron');
 const path = require('path');
 const { scrapeAll } = require('./scraper');
 const { initDB, cargarDatos, getStatus } = require('./db');
-
+ 
 const app = express();
 const PORT = process.env.PORT || 3001;
 const API_KEY = process.env.API_KEY || 'dev-key-cambiar-en-produccion';
-
+ 
 app.use(cors());
 app.use(express.json());
-
+ 
 // Servir el frontend desde backend/public (misma carpeta, sin dependencia externa)
 app.use(express.static(path.join(__dirname, 'public')));
-
+ 
 // ─────────────────────────────────────────────
 // DATOS FALLBACK (ZonaProp Index Sep 2025)
 // Se usan si el scraper no tiene datos aún.
@@ -71,18 +71,18 @@ const FALLBACK = {
   la_boca:          { nombre: 'La Boca',          m2_mediana: 1560, m2_min: 1150, m2_max: 2000, region: 'Sur',               alq_ratio: 0.0046 },
   lugano:           { nombre: 'Lugano',           m2_mediana: 1098, m2_min:  830, m2_max: 1420, region: 'Sur',               alq_ratio: 0.0048 },
 };
-
+ 
 // ─────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────
 function getDolarMep() {
   return parseFloat(process.env.DOLAR_MEP) || 1400;
 }
-
+ 
 async function getMergedData() {
   const cache = await cargarDatos();
   const merged = { ...FALLBACK };
-
+ 
   if (cache?.barrios) {
     for (const [key, data] of Object.entries(cache.barrios)) {
       if (merged[key]) {
@@ -94,14 +94,14 @@ async function getMergedData() {
       }
     }
   }
-
+ 
   return { data: merged, cache, dolarMep: getDolarMep() };
 }
-
+ 
 // ─────────────────────────────────────────────
 // AUTO-UPDATE MENSUAL — Descarga el PDF de ZonaProp
 // ─────────────────────────────────────────────
-
+ 
 const REGIONES = {
   'Corredor Norte': ['puerto_madero','palermo','belgrano','nuñez','recoleta','barrio_norte'],
   'Corredor Noroeste': ['colegiales','chacarita','villa_urquiza','villa_del_parque'],
@@ -111,7 +111,7 @@ const REGIONES = {
   'Sur-Este': ['boedo','barracas'],
   'Sur': ['nueva_pompeya','la_boca','lugano'],
 };
-
+ 
 async function actualizarDesdePDF() {
   const now = new Date();
   const reportDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -119,10 +119,10 @@ async function actualizarDesdePDF() {
   const month = String(reportDate.getMonth() + 1).padStart(2, '0');
   const uploadYear  = now.getFullYear();
   const uploadMonth = String(now.getMonth() + 1).padStart(2, '0');
-
+ 
   const url = `https://www.zonaprop.com.ar/blog/wp-content/uploads/${uploadYear}/${uploadMonth}/INDEX_CABA_REPORTE_${year}-${month}.pdf`;
   console.log(`[PDF-UPDATE] Intentando descargar reporte ${year}-${month}...`);
-
+ 
   try {
     const axios = require('axios');
     const response = await axios.get(url, {
@@ -133,14 +133,14 @@ async function actualizarDesdePDF() {
         'Referer': 'https://www.zonaprop.com.ar/blog/zpindex/',
       },
     });
-
+ 
     const pdfParse = require('pdf-parse');
     const data = await pdfParse(response.data);
     const text = data.text;
-
+ 
     const barriosExtraidos = {};
     const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-
+ 
     const BARRIO_MAP = {
       'Puerto Madero': 'puerto_madero', 'Palermo': 'palermo', 'Belgrano': 'belgrano',
       'Nuñez': 'nuñez', 'Núñez': 'nuñez', 'Recoleta': 'recoleta',
@@ -152,7 +152,7 @@ async function actualizarDesdePDF() {
       'Mataderos': 'mataderos', 'Boedo': 'boedo', 'Barracas': 'barracas',
       'Nueva Pompeya': 'nueva_pompeya', 'La Boca': 'la_boca', 'Lugano': 'lugano',
     };
-
+ 
     lines.forEach(line => {
       Object.entries(BARRIO_MAP).forEach(([nombre, key]) => {
         if (line.includes(nombre)) {
@@ -164,7 +164,7 @@ async function actualizarDesdePDF() {
         }
       });
     });
-
+ 
     if (Object.keys(barriosExtraidos).length > 3) {
       Object.entries(barriosExtraidos).forEach(([key, precio]) => {
         if (FALLBACK[key]) {
@@ -179,18 +179,18 @@ async function actualizarDesdePDF() {
     console.warn(`[PDF-UPDATE] No se pudo actualizar desde PDF: ${err.message}`);
   }
 }
-
+ 
 // Cron: día 5 de cada mes a las 10am
 cron.schedule('0 10 5 * *', async () => {
   console.log('[CRON] Actualizando datos desde ZonaProp PDF mensual...');
   await actualizarDesdePDF();
 });
-
-
+ 
+ 
 // ─────────────────────────────────────────────
 // ROUTES
 // ─────────────────────────────────────────────
-
+ 
 // GET /api/barrios
 app.get('/api/barrios', async (req, res) => {
   const { data } = await getMergedData();
@@ -202,11 +202,11 @@ app.get('/api/barrios', async (req, res) => {
   }));
   res.json({ ok: true, barrios });
 });
-
+ 
 // ─────────────────────────────────────────────
 // FACTORES DE AJUSTE
 // ─────────────────────────────────────────────
-
+ 
 const FACTORES_ANTIGUEDAD = {
   '0-5':   { label: 'Nuevo (0-5 años)',         factor: 1.25 },
   '6-15':  { label: 'Moderno (6-15 años)',       factor: 1.12 },
@@ -215,7 +215,7 @@ const FACTORES_ANTIGUEDAD = {
   '50+':   { label: 'Muy antiguo (+50 años)',    factor: 0.78 },
   'refaccionado': { label: 'Refaccionado/reciclado', factor: 1.08 },
 };
-
+ 
 const AMENITIES_CONFIG = {
   pileta:       { label: 'Pileta',              impacto: 0.08, icono: '🏊' },
   gimnasio:     { label: 'Gimnasio',            impacto: 0.05, icono: '🏋️' },
@@ -230,17 +230,17 @@ const AMENITIES_CONFIG = {
   bicicletero:  { label: 'Bicicletero',         impacto: 0.01, icono: '🚲' },
   vista_al_rio: { label: 'Vista al río/parque', impacto: 0.06, icono: '🌊' },
 };
-
+ 
 function calcularFactorAmenities(amenitiesKeys) {
   if (!amenitiesKeys || amenitiesKeys.length === 0) return { factor: 1.0, impacto_total: 0, detalle: [] };
-
+ 
   const detalle = [];
   let impactoAcumulado = 0;
-
+ 
   const sorted = amenitiesKeys
     .filter(k => AMENITIES_CONFIG[k])
     .sort((a, b) => AMENITIES_CONFIG[b].impacto - AMENITIES_CONFIG[a].impacto);
-
+ 
   sorted.forEach((key, idx) => {
     const cfg = AMENITIES_CONFIG[key];
     const impactoEfectivo = cfg.impacto * Math.pow(0.85, idx);
@@ -253,9 +253,9 @@ function calcularFactorAmenities(amenitiesKeys) {
       impacto_efectivo: parseFloat(impactoEfectivo.toFixed(4)),
     });
   });
-
+ 
   const impactoFinal = Math.min(impactoAcumulado, 0.40);
-
+ 
   return {
     factor: parseFloat((1 + impactoFinal).toFixed(4)),
     impacto_total: parseFloat((impactoFinal * 100).toFixed(1)),
@@ -263,7 +263,7 @@ function calcularFactorAmenities(amenitiesKeys) {
     cap_aplicado: impactoAcumulado > 0.40,
   };
 }
-
+ 
 app.get('/api/amenities', (req, res) => {
   res.json({
     ok: true,
@@ -271,7 +271,7 @@ app.get('/api/amenities', (req, res) => {
     antiguedad: Object.entries(FACTORES_ANTIGUEDAD).map(([key, v]) => ({ key, ...v })),
   });
 });
-
+ 
 // GET /api/cotizar
 app.get('/api/cotizar', async (req, res) => {
   const {
@@ -282,64 +282,64 @@ app.get('/api/cotizar', async (req, res) => {
     antiguedad = '16-30',
     amenities: amenitiesStr = '',
   } = req.query;
-
+ 
   if (!barrioKey) return res.status(400).json({ ok: false, error: 'Parámetro barrio requerido' });
-
+ 
   const metros = parseFloat(metrosStr);
   if (!metros || metros < 10 || metros > 2000) {
     return res.status(400).json({ ok: false, error: 'Metros debe ser entre 10 y 2000' });
   }
-
+ 
   const { data, cache, dolarMep } = await getMergedData();
   const b = data[barrioKey];
-
+ 
   if (!b) return res.status(404).json({ ok: false, error: `Barrio '${barrioKey}' no encontrado` });
-
+ 
   const ajustesTipo = { depto: 1.0, ph: 0.90, estrenar: 1.12, pozo: 0.88 };
   const factorTipo = ajustesTipo[tipo] ?? 1.0;
-
+ 
   const cfgAntiguedad = FACTORES_ANTIGUEDAD[antiguedad] || FACTORES_ANTIGUEDAD['16-30'];
   const factorAntiguedad = cfgAntiguedad.factor;
-
+ 
   const amenitiesKeys = amenitiesStr ? amenitiesStr.split(',').map(s => s.trim()).filter(Boolean) : [];
   const amenitiesResult = calcularFactorAmenities(amenitiesKeys);
   const factorAmenities = amenitiesResult.factor;
-
+ 
   const factorTotal = factorTipo * factorAntiguedad * factorAmenities;
   const factorBase  = factorTipo;
-
+ 
   const m2_base = Math.round(b.m2_mediana * factorBase);
   const m2      = Math.round(b.m2_mediana * factorTotal);
   const m2_min  = Math.round(b.m2_min * factorTotal);
   const m2_max  = Math.round(b.m2_max * factorTotal);
-
+ 
   const precioUSD    = Math.round(m2 * metros);
   const precioMinUSD = Math.round(m2_min * metros);
   const precioMaxUSD = Math.round(m2_max * metros);
   const precioPesos  = precioUSD * dolarMep;
-
+ 
   const precioBaseUSD = Math.round(m2_base * metros);
   const diferenciaPct = parseFloat(((precioUSD - precioBaseUSD) / precioBaseUSD * 100).toFixed(1));
-
+ 
   const ALQ_BASE_CABA_M2_MES = global.ALQ_BASE_CABA_M2_MES_ACTUALIZADO || 16200;
   const PROMEDIO_VENTA_CABA  = 2455;
-
+ 
   const factorZonal = b.m2_mediana / PROMEDIO_VENTA_CABA;
   const alqBaseM2Mes = Math.round(ALQ_BASE_CABA_M2_MES * factorZonal);
-
+ 
   const alqM2Mes    = b.alq_m2_mes     || alqBaseM2Mes;
   const alqM2MesMin = b.alq_m2_mes_min || Math.round(alqM2Mes * 0.88);
   const alqM2MesMax = b.alq_m2_mes_max || Math.round(alqM2Mes * 1.12);
-
+ 
   const alqMesPesos = Math.round(alqM2Mes * metros * factorTotal);
   const alqMinPesos = Math.round(alqM2MesMin * metros * factorTotal);
   const alqMaxPesos = Math.round(alqM2MesMax * metros * factorTotal);
   const alqRentabilidad = ((alqMesPesos * 12) / precioPesos * 100).toFixed(1);
   const añosRecupero    = (100 / parseFloat(alqRentabilidad)).toFixed(1);
-
+ 
   const promedioCABA = 2452;
   const diffVsPromedio = ((m2 - promedioCABA) / promedioCABA * 100).toFixed(1);
-
+ 
   const cotizacion = {
     barrio: { key: barrioKey, nombre: b.nombre, region: b.region },
     inputs: { metros, tipo, op, antiguedad, amenities: amenitiesKeys },
@@ -370,10 +370,10 @@ app.get('/api/cotizar', async (req, res) => {
       fuente_scraping: b.fuentes || null,
     },
   };
-
+ 
   res.json({ ok: true, cotizacion });
 });
-
+ 
 // GET /api/precios
 app.get('/api/precios', async (req, res) => {
   const { data, cache } = await getMergedData();
@@ -384,7 +384,7 @@ app.get('/api/precios', async (req, res) => {
     barrios: data,
   });
 });
-
+ 
 // GET /api/status
 app.get('/api/status', async (req, res) => {
   const status = await getStatus();
@@ -401,7 +401,7 @@ app.get('/api/status', async (req, res) => {
     cron: 'Scraping automático cada día a las 06:00hs',
   });
 });
-
+ 
 // ─────────────────────────────────────────────
 // GET /api/noticias
 // Noticias inmobiliarias AI-powered con web search.
@@ -411,13 +411,13 @@ app.get('/api/status', async (req, res) => {
 let noticiasCache = null;
 let noticiasCacheTime = null;
 const NOTICIAS_CACHE_MS = 2 * 60 * 60 * 1000; // 2 horas
-
+ 
 app.get('/api/noticias', async (req, res) => {
   // Devolver cache si está vigente
   if (noticiasCache && noticiasCacheTime && (Date.now() - noticiasCacheTime < NOTICIAS_CACHE_MS)) {
     return res.json({ ok: true, noticias: noticiasCache, desde_cache: true });
   }
-
+ 
   const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
   if (!ANTHROPIC_API_KEY) {
     return res.status(503).json({
@@ -425,67 +425,17 @@ app.get('/api/noticias', async (req, res) => {
       error: 'ANTHROPIC_API_KEY no configurada. Agregala en las variables de entorno (.env o Railway).',
     });
   }
-
+ 
   try {
     const axios = require('axios');
-
-    // Primera llamada: búsqueda web para obtener contexto real y actualizado
-    const searchResp = await axios.post(
-      'https://api.anthropic.com/v1/messages',
-      {
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 2500,
-        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-        messages: [{
-          role: 'user',
-          content: `Buscá las noticias más recientes y relevantes del mercado inmobiliario de Argentina y CABA (Ciudad de Buenos Aires).
-Buscá específicamente:
-- Variación de precios de departamentos en dólares (USD/m²)
-- Créditos hipotecarios UVA y novedades bancarias
-- Escrituras y operaciones inmobiliarias recientes
-- Impacto del dólar en el mercado inmobiliario
-- Alquileres en pesos: valores actuales y tendencias
-- Noticias de barrios de CABA (Palermo, Belgrano, Caballito, etc.)
-
-Usá la herramienta de búsqueda para encontrar información actual.`,
-        }],
-      },
-      {
-        headers: {
-          'x-api-key': ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01',
-          'anthropic-beta': 'web-search-2025-03-05',
-          'Content-Type': 'application/json',
-        },
-        timeout: 40000,
-      }
-    );
-
-    // Historial con el resultado de la búsqueda para la segunda llamada
-    const searchMessages = [
-      {
-        role: 'user',
-        content: `Buscá las noticias más recientes y relevantes del mercado inmobiliario de Argentina y CABA (Ciudad de Buenos Aires).
-Buscá específicamente:
-- Variación de precios de departamentos en dólares (USD/m²)
-- Créditos hipotecarios UVA y novedades bancarias
-- Escrituras y operaciones inmobiliarias recientes
-- Impacto del dólar en el mercado inmobiliario
-- Alquileres en pesos: valores actuales y tendencias
-- Noticias de barrios de CABA (Palermo, Belgrano, Caballito, etc.)
-
-Usá la herramienta de búsqueda para encontrar información actual.`,
-      },
-      { role: 'assistant', content: searchResp.data.content },
-    ];
-
-    // Segunda llamada: estructurar en JSON limpio
+ 
+    // Llamada única: Claude genera noticias basadas en su conocimiento del mercado
     const parseResp = await axios.post(
       'https://api.anthropic.com/v1/messages',
       {
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 2000,
-        system: `Eres un asistente especializado en el mercado inmobiliario argentino.
+        system: `Eres un experto en el mercado inmobiliario argentino, especialmente CABA.
 Respondés ÚNICAMENTE con JSON válido, sin texto antes ni después, sin bloques de código markdown.
 El JSON debe tener exactamente esta estructura:
 {
@@ -495,22 +445,24 @@ El JSON debe tener exactamente esta estructura:
       "resumen": "string — resumen de 2-3 oraciones, máx 200 caracteres",
       "resumen_largo": "string — desarrollo de 4-6 oraciones con contexto y cifras",
       "categoria": "precios|creditos|mercado|dolar",
-      "fuente": "string — nombre del medio (ej: Infobae, La Nación, Ámbito)",
+      "fuente": "string — nombre del medio (ej: Infobae, La Nación, Ámbito, Reporte Inmobiliario)",
       "datos": ["array de 0 a 3 datos clave tipo '+5%', 'USD 2.800/m²', '1.200 escrituras'"],
       "urgente": false
     }
   ]
 }
-Generá entre 5 y 7 noticias basadas en los resultados de búsqueda.
-Las noticias deben ser concretas, con datos numéricos reales cuando estén disponibles.
-SOLO JSON, nada más.`,
-        messages: [
-          ...searchMessages,
-          {
-            role: 'user',
-            content: 'Ahora tomá toda esa información y estructurala como el JSON de noticias inmobiliarias. Solo JSON, sin markdown.',
-          },
-        ],
+Generá exactamente 6 noticias realistas y actuales sobre:
+1. Precios USD/m² en barrios de CABA (usar datos reales recientes)
+2. Créditos hipotecarios UVA — tasas y novedades bancarias
+3. Volumen de escrituras y operaciones
+4. Impacto del dólar MEP en el mercado
+5. Alquileres en pesos — valores y tendencias post-DNU
+6. Un barrio específico de CABA con tendencia destacada
+Usá cifras reales del mercado argentino 2025-2026. SOLO JSON, nada más.`,
+        messages: [{
+          role: 'user',
+          content: 'Generá el JSON con las 6 noticias inmobiliarias de CABA/Argentina más relevantes y actuales.',
+        }],
       },
       {
         headers: {
@@ -521,33 +473,33 @@ SOLO JSON, nada más.`,
         timeout: 30000,
       }
     );
-
+ 
     const rawText = parseResp.data.content
       .filter(b => b.type === 'text')
       .map(b => b.text)
       .join('');
-
+ 
     const cleanJson = rawText
       .replace(/```json\s*/gi, '')
       .replace(/```\s*/gi, '')
       .trim();
-
+ 
     const parsed = JSON.parse(cleanJson);
     const noticias = parsed.noticias || [];
-
+ 
     if (!Array.isArray(noticias) || noticias.length === 0) {
       throw new Error('La API no devolvió noticias válidas');
     }
-
+ 
     noticiasCache = noticias;
     noticiasCacheTime = Date.now();
-
+ 
     console.log(`[NOTICIAS] ${noticias.length} noticias cargadas y cacheadas`);
     res.json({ ok: true, noticias, desde_cache: false });
-
+ 
   } catch (err) {
     console.error('[NOTICIAS] Error:', err.message);
-
+ 
     // Si hay cache viejo, devolverlo como fallback
     if (noticiasCache) {
       return res.json({
@@ -557,21 +509,21 @@ SOLO JSON, nada más.`,
         aviso: 'Cache anterior (API temporalmente no disponible)',
       });
     }
-
+ 
     res.status(500).json({ ok: false, error: `Error al obtener noticias: ${err.message}` });
   }
 });
-
+ 
 // POST /api/scrape — fuerza scraping manual (protegido con API_KEY + rate limit)
 let ultimoScrapeManual = null;
 const MINUTOS_ENTRE_SCRAPES = 120;
-
+ 
 app.post('/api/scrape', async (req, res) => {
   const key = req.headers['x-api-key'] || req.body?.api_key;
   if (key !== API_KEY) {
     return res.status(401).json({ ok: false, error: 'Clave incorrecta' });
   }
-
+ 
   if (ultimoScrapeManual) {
     const minutosPasados = (Date.now() - ultimoScrapeManual) / 1000 / 60;
     if (minutosPasados < MINUTOS_ENTRE_SCRAPES) {
@@ -582,17 +534,17 @@ app.post('/api/scrape', async (req, res) => {
       });
     }
   }
-
+ 
   ultimoScrapeManual = Date.now();
   res.json({ ok: true, mensaje: 'Scraping iniciado. Los datos se actualizarán en 5-10 minutos.' });
   scrapeAll().catch(err => console.error('[Manual scrape]', err.message));
 });
-
+ 
 // Catch-all → frontend SPA
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
-
+ 
 // ─────────────────────────────────────────────
 // START
 // ─────────────────────────────────────────────
@@ -602,6 +554,6 @@ initDB().then(async () => {
     console.log(`   Frontend: http://localhost:${PORT}`);
     console.log(`   API docs: http://localhost:${PORT}/api/status\n`);
   });
-
+ 
   actualizarDesdePDF().catch(err => console.warn('[INICIO] PDF update:', err.message));
 });
