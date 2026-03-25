@@ -130,12 +130,158 @@
     @keyframes spin { to { transform:rotate(360deg); } }
     .error-msg { background:#fef2f2; border:1px solid rgba(155,28,28,.15); border-radius:var(--radius-sm); padding:12px 16px; font-size:14px; color:#9b1c1c; }
 
+    /* ── Noticias ── */
+    .news-wrapper {
+      max-width: 700px;
+      margin: 0 auto 64px;
+      padding: 0 24px;
+    }
+    .news-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .news-header-left { display: flex; align-items: center; gap: 12px; }
+    .news-icon {
+      width: 36px; height: 36px;
+      background: var(--accent-light);
+      border: 1px solid rgba(200,82,26,.2);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+    .news-title { font-family: 'DM Serif Display', serif; font-size: 22px; }
+    .news-sub { font-size: 12px; color: var(--ink3); margin-top: 2px; }
+    .news-refresh-btn {
+      display: flex; align-items: center; gap: 6px;
+      padding: 7px 14px;
+      border: 1px solid var(--border2);
+      border-radius: var(--radius-sm);
+      background: var(--paper);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px; font-weight: 500;
+      color: var(--ink2);
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .news-refresh-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+    .news-refresh-btn:disabled { opacity: .45; cursor: default; }
+    .news-refresh-icon { font-size: 13px; transition: transform .4s; }
+    .news-refresh-btn.spinning .news-refresh-icon { animation: spinonce .7s linear infinite; }
+    @keyframes spinonce { to { transform: rotate(360deg); } }
+
+    .news-cats {
+      display: flex; gap: 6px; flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+    .ncat {
+      padding: 5px 12px;
+      border: 1px solid var(--border2);
+      border-radius: 20px;
+      font-size: 11px; font-weight: 500;
+      color: var(--ink3);
+      cursor: pointer;
+      background: var(--paper);
+      transition: all .15s;
+      user-select: none;
+    }
+    .ncat:hover { border-color: var(--accent2); color: var(--ink2); }
+    .ncat.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+    .news-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+
+    .news-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      cursor: pointer;
+      transition: border-color .15s, box-shadow .15s;
+      position: relative;
+      overflow: hidden;
+    }
+    .news-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: var(--accent);
+      opacity: 0;
+      transition: opacity .15s;
+    }
+    .news-card:hover { border-color: var(--accent2); box-shadow: 0 2px 8px rgba(15,14,12,.06); }
+    .news-card:hover::before { opacity: 1; }
+
+    .nc-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+    .nc-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+    .nc-badge { font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 10px; letter-spacing: .3px; }
+    .nc-b-suba  { background: #fee2e2; color: #991b1b; }
+    .nc-b-baja  { background: #dcfce7; color: #166534; }
+    .nc-b-dato  { background: var(--blue-light); color: var(--blue); }
+    .nc-b-credito { background: #fef9c3; color: #854d0e; }
+    .nc-b-neutral { background: var(--paper2); color: var(--ink2); }
+
+    .nc-headline {
+      font-family: 'DM Serif Display', serif;
+      font-size: 17px; line-height: 1.3;
+      color: var(--ink);
+      margin-bottom: 8px;
+      flex: 1;
+    }
+    .nc-source { font-size: 11px; color: var(--ink3); white-space: nowrap; flex-shrink: 0; padding-top: 3px; }
+    .nc-body {
+      font-size: 13px; line-height: 1.6;
+      color: var(--ink2);
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .nc-body.expanded { display: block; -webkit-line-clamp: unset; }
+    .nc-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: 12px; padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+    .nc-data { display: flex; gap: 10px; flex-wrap: wrap; }
+    .nc-datum {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 11px; font-weight: 500;
+      padding: 3px 8px;
+      background: var(--paper2); border-radius: var(--radius-sm);
+      color: var(--ink2);
+    }
+    .nc-datum.up { background: #dcfce7; color: #166534; }
+    .nc-datum.dn { background: #fee2e2; color: #991b1b; }
+    .nc-readmore {
+      font-size: 11px; color: var(--accent);
+      font-weight: 500; cursor: pointer;
+      background: none; border: none;
+      font-family: 'DM Sans', sans-serif;
+      padding: 0; text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .nc-readmore:hover { color: var(--ink); }
+
+    .news-skeleton { display: flex; flex-direction: column; gap: 12px; }
+    .sk-card { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; }
+    .sk-line { height: 12px; background: var(--paper3); border-radius: 4px; margin-bottom: 8px; animation: skpulse 1.4s ease-in-out infinite; }
+    @keyframes skpulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+    .news-empty { text-align: center; padding: 40px 20px; color: var(--ink3); font-size: 14px; background: var(--paper2); border-radius: var(--radius); }
+    .news-footer-note { margin-top: 14px; font-size: 11px; color: var(--ink3); display: flex; align-items: center; gap: 6px; }
+
     footer { text-align:center; padding:28px 24px; font-size:12px; color:var(--ink3); border-top:1px solid var(--border); }
 
     @media(max-width:600px){
       nav{padding:12px 16px} .hero h1{font-size:32px}
       .form-card{padding:20px} .two-col,.age-grid,.amenities-grid{grid-template-columns:1fr 1fr}
       .metrics-grid{grid-template-columns:1fr 1fr}
+      .nc-headline { font-size: 15px; }
+      .news-header { flex-direction: column; align-items: flex-start; gap: 10px; }
     }
   </style>
 </head>
@@ -202,6 +348,45 @@
 
 <div class="results-wrapper" id="results"></div>
 
+<!-- ── NOTICIAS INMOBILIARIAS ── -->
+<section class="news-wrapper" id="news-section">
+
+  <div class="news-header">
+    <div class="news-header-left">
+      <div class="news-icon">📰</div>
+      <div>
+        <div class="news-title">Noticias inmobiliarias</div>
+        <div class="news-sub">Actualizado con IA · Mercado CABA y Argentina</div>
+      </div>
+    </div>
+    <button class="news-refresh-btn" id="news-refresh-btn" onclick="cargarNoticias(true)">
+      <span class="news-refresh-icon">↻</span> Actualizar
+    </button>
+  </div>
+
+  <div class="news-cats" id="news-cats">
+    <span class="ncat on" data-cat="todo" onclick="filtrarCat('todo',this)">Todo</span>
+    <span class="ncat" data-cat="precios" onclick="filtrarCat('precios',this)">Precios</span>
+    <span class="ncat" data-cat="creditos" onclick="filtrarCat('creditos',this)">Créditos</span>
+    <span class="ncat" data-cat="mercado" onclick="filtrarCat('mercado',this)">Mercado</span>
+    <span class="ncat" data-cat="dolar" onclick="filtrarCat('dolar',this)">Dólar & inversión</span>
+  </div>
+
+  <div id="news-container">
+    <div class="news-skeleton">
+      <div class="sk-card"><div class="sk-line" style="width:35%"></div><div class="sk-line" style="width:80%"></div><div class="sk-line" style="width:60%"></div></div>
+      <div class="sk-card"><div class="sk-line" style="width:28%"></div><div class="sk-line" style="width:75%"></div><div class="sk-line" style="width:55%"></div></div>
+      <div class="sk-card"><div class="sk-line" style="width:40%"></div><div class="sk-line" style="width:70%"></div><div class="sk-line" style="width:65%"></div></div>
+    </div>
+  </div>
+
+  <div class="news-footer-note">
+    <span>⚡</span>
+    <span>Noticias generadas con IA a partir de búsquedas en tiempo real · Solo referencia periodística</span>
+  </div>
+
+</section>
+
 <footer>
   <p style="margin-bottom:6px;font-weight:500;color:var(--ink2)">Cómo funciona</p>
   <p>Scraping diario de ZonaProp + Argenprop · Mediana filtrada con IQR · Ajuste por antigüedad y amenities con factores basados en diferenciales de mercado CABA · Precios de oferta publicada.</p>
@@ -255,7 +440,6 @@ function renderAms() {
     `<label class="am-chip ${state.amenities.has(a.key)?'on':''}" onclick="toggleAm('${a.key}',this)">
       <span class="am-icon">${a.icon}</span>
       <span class="am-label">${a.label}</span>
-
     </label>`
   ).join('');
   syncAmSummary();
@@ -284,7 +468,6 @@ function setPill(g, v, el) {
   el.closest('.pills').querySelectorAll('.pill').forEach(b => b.classList.remove('on'));
   el.classList.add('on');
 
-  // "En pozo" y "A estrenar" no tienen antigüedad — son construcción nueva
   if (g === 'tipo') {
     const ageBlock = document.getElementById('age-block');
     const note = document.getElementById('pozo-note');
@@ -318,7 +501,6 @@ async function checkStatus() {
     }
   } catch { document.getElementById('stxt').textContent = 'Sin conexión'; }
 }
-
 
 async function cargarBarrios() {
   try {
@@ -363,7 +545,6 @@ function renderResults(c) {
   const v=c.venta, aj=c.ajustes, m=c.mercado, alq=c.alquiler;
   const soloAlquiler = c.inputs.op === 'alquiler';
 
-  // ── Precio principal ──
   let html = `<div class="result-main">
     <div class="result-label">${c.barrio.nombre} · ${c.inputs.metros} m² · ${c.inputs.tipo} · ${EDAD.find(e=>e.key===c.inputs.antiguedad)?.label||''}</div>
     ${soloAlquiler ? '' : `
@@ -378,7 +559,6 @@ function renderResults(c) {
     </div>
   </div>`;
 
-  // ── Desglose y métricas — solo si hay venta ──
   if (!soloAlquiler) {
   const fT=aj.factor_tipo, fA=aj.factor_antiguedad, fAm=aj.factor_amenities;
   const sc = p => p>0?'c-pos':p<0?'c-neg':'c-neu';
@@ -422,9 +602,8 @@ function renderResults(c) {
     <div class="metric-card"><div class="m-label">Vs. promedio CABA</div><div class="m-value" style="color:${diffP>=0?'var(--accent)':'var(--green)'}">${diffP>=0?'Por encima':'Por debajo'}</div><div class="m-sub">mediana: ${usd(m.promedio_caba_m2)}/m²</div></div>
     <div class="metric-card"><div class="m-label">Ajustes aplicados</div><div class="m-value" style="color:${aj.diferencia_vs_base_pct>=0?'var(--accent)':'var(--blue)'}">${aj.diferencia_vs_base_pct>=0?'Aumentan':'Reducen'}</div><div class="m-sub">el precio base del barrio</div></div>
   </div>`;
-  } // fin if !soloAlquiler
+  }
 
-  // ── Barras ──
   const compar = [
     {n:'Puerto Madero',m2:6163},{n:'Palermo',m2:3362},{n:'Belgrano',m2:3100},
     {n:c.barrio.nombre,m2:v.m2_usd,hl:true},
@@ -439,7 +618,6 @@ function renderResults(c) {
     </div>`).join('')}
   </div>`;
 
-  // ── Alquiler ──
   if (alq) {
     const fuenteAlq = alq.fuente === 'scraping_tiempo_real'
       ? `${alq.muestras} avisos scrapeados`
@@ -468,7 +646,116 @@ function renderResults(c) {
   },50);
 }
 
-checkStatus(); cargarBarrios(); renderEdad(); renderAms();
+// ──────────────────────────────────────────
+// NOTICIAS INMOBILIARIAS — AI-powered
+// ──────────────────────────────────────────
+let noticiasCache = null;
+let catActiva = 'todo';
+
+const CAT_KEYWORDS = {
+  precios:  ['precio', 'USD/m²', 'valor', 'm²', 'cotizaci', 'caída', 'suba', 'baja', 'infla'],
+  creditos: ['crédito', 'hipotecario', 'UVA', 'banco', 'tasa', 'financiamiento', 'préstamo'],
+  mercado:  ['venta', 'alquiler', 'oferta', 'demanda', 'barrio', 'CABA', 'operaciones', 'escritura'],
+  dolar:    ['dólar', 'inversión', 'MEP', 'blue', 'tipo de cambio', 'reserva', 'rentabilidad'],
+};
+
+function clasificarNoticia(noticia) {
+  const texto = (noticia.titulo + ' ' + noticia.resumen).toLowerCase();
+  for (const [cat, kws] of Object.entries(CAT_KEYWORDS)) {
+    if (kws.some(kw => texto.includes(kw.toLowerCase()))) return cat;
+  }
+  return 'mercado';
+}
+
+async function cargarNoticias(force = false) {
+  if (noticiasCache && !force) { renderNoticias(noticiasCache); return; }
+
+  const btn = document.getElementById('news-refresh-btn');
+  const cont = document.getElementById('news-container');
+
+  btn.disabled = true;
+  btn.classList.add('spinning');
+  cont.innerHTML = `<div class="news-skeleton">
+    <div class="sk-card"><div class="sk-line" style="width:35%"></div><div class="sk-line" style="width:80%"></div><div class="sk-line" style="width:60%"></div></div>
+    <div class="sk-card"><div class="sk-line" style="width:28%"></div><div class="sk-line" style="width:75%"></div><div class="sk-line" style="width:55%"></div></div>
+    <div class="sk-card"><div class="sk-line" style="width:40%"></div><div class="sk-line" style="width:70%"></div><div class="sk-line" style="width:65%"></div></div>
+  </div>`;
+
+  try {
+    const resp = await fetch('/api/noticias');
+    const data = await resp.json();
+    if (!data.ok || !data.noticias?.length) throw new Error(data.error || 'Sin datos');
+    noticiasCache = data.noticias;
+    renderNoticias(noticiasCache);
+  } catch (err) {
+    cont.innerHTML = `<div class="news-empty">No se pudieron cargar las noticias.<br><small>${err.message}</small></div>`;
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove('spinning');
+  }
+}
+
+function filtrarCat(cat, el) {
+  catActiva = cat;
+  document.querySelectorAll('.ncat').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  if (noticiasCache) renderNoticias(noticiasCache);
+}
+
+function renderNoticias(noticias) {
+  const cont = document.getElementById('news-container');
+  let lista = noticias;
+  if (catActiva !== 'todo') {
+    lista = noticias.filter(n => (n.categoria || clasificarNoticia(n)) === catActiva);
+  }
+  if (!lista.length) {
+    cont.innerHTML = `<div class="news-empty">No hay noticias en esta categoría por ahora.</div>`;
+    return;
+  }
+  cont.innerHTML = `<div class="news-grid">${lista.map((n, i) => renderCard(n, i)).join('')}</div>`;
+}
+
+function renderCard(n, idx) {
+  const cat = n.categoria || clasificarNoticia(n);
+  const badgeClass = { precios:'nc-b-dato', creditos:'nc-b-credito', dolar:'nc-b-suba', mercado:'nc-b-neutral' }[cat] || 'nc-b-neutral';
+  const catLabel = { precios:'Precios', creditos:'Créditos', dolar:'Dólar & inversión', mercado:'Mercado' }[cat] || cat;
+  const datosHtml = (n.datos || []).map(d => {
+    const cls = d.startsWith('+') ? 'up' : d.startsWith('-') ? 'dn' : '';
+    return `<span class="nc-datum ${cls}">${d}</span>`;
+  }).join('');
+  return `<div class="news-card" id="nc-${idx}">
+    <div class="nc-badges">
+      <span class="nc-badge ${badgeClass}">${catLabel}</span>
+      ${n.urgente ? '<span class="nc-badge nc-b-suba">🔴 Urgente</span>' : ''}
+    </div>
+    <div class="nc-top">
+      <div class="nc-headline">${n.titulo}</div>
+      <span class="nc-source">${n.fuente || ''}</span>
+    </div>
+    <div class="nc-body" id="ncb-${idx}">${n.resumen}</div>
+    <div class="nc-footer">
+      <div class="nc-data">${datosHtml}</div>
+      ${n.resumen_largo ? `<button class="nc-readmore" onclick="toggleLeer(${idx})">Leer más ▾</button>` : ''}
+    </div>
+  </div>`;
+}
+
+function toggleLeer(idx) {
+  const body = document.getElementById(`ncb-${idx}`);
+  const btn  = document.querySelector(`#nc-${idx} .nc-readmore`);
+  const n    = noticiasCache[idx];
+  if (!body || !n) return;
+  const expanded = body.classList.toggle('expanded');
+  if (expanded) {
+    body.textContent = n.resumen_largo || n.resumen;
+    btn.textContent = 'Ver menos ▴';
+  } else {
+    body.textContent = n.resumen;
+    btn.textContent = 'Leer más ▾';
+  }
+}
+
+checkStatus(); cargarBarrios(); renderEdad(); renderAms(); cargarNoticias();
 </script>
 </body>
 </html>
