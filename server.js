@@ -8,77 +8,6 @@
  *   GET /api/precios          → todos los precios del cache
  *   GET /api/status           → estado del cache y última actualización
  *   GET /api/noticias         → noticias inmobiliarias AI-powered (cache 2hs)
- // ─────────────────────────────────────────────
-// GET /api/noticias
-// ─────────────────────────────────────────────
-let noticiasCache = null;
-let noticiasCacheTime = null;
-const NOTICIAS_CACHE_MS = 2 * 60 * 60 * 1000;
-
-app.get('/api/noticias', async (req, res) => {
-  if (noticiasCache && noticiasCacheTime && (Date.now() - noticiasCacheTime < NOTICIAS_CACHE_MS)) {
-    return res.json({ ok: true, noticias: noticiasCache, desde_cache: true });
-  }
-
-  const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
-  if (!ANTHROPIC_API_KEY) {
-    return res.status(503).json({ ok: false, error: 'ANTHROPIC_API_KEY no configurada.' });
-  }
-
-  try {
-    const axios = require('axios');
-    const parseResp = await axios.post(
-      'https://api.anthropic.com/v1/messages',
-      {
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 2000,
-        system: `Eres un experto en el mercado inmobiliario argentino, especialmente CABA.
-Respondés ÚNICAMENTE con JSON válido, sin texto antes ni después, sin bloques de código markdown.
-El JSON debe tener exactamente esta estructura:
-{
-  "noticias": [
-    {
-      "titulo": "string — titular periodístico claro, máx 90 caracteres",
-      "resumen": "string — resumen de 2-3 oraciones, máx 200 caracteres",
-      "resumen_largo": "string — desarrollo de 4-6 oraciones con contexto y cifras",
-      "categoria": "precios|creditos|mercado|dolar",
-      "fuente": "string — nombre del medio (ej: Infobae, La Nación, Ámbito, Reporte Inmobiliario)",
-      "datos": ["array de 0 a 3 datos clave tipo '+5%', 'USD 2.800/m²', '1.200 escrituras'"],
-      "urgente": false
-    }
-  ]
-}
-Generá exactamente 6 noticias realistas y actuales sobre el mercado inmobiliario argentino 2025-2026. SOLO JSON, nada más.`,
-        messages: [{ role: 'user', content: 'Generá el JSON con las 6 noticias inmobiliarias.' }],
-      },
-      {
-        headers: {
-          'x-api-key': ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01',
-          'Content-Type': 'application/json',
-        },
-        timeout: 30000,
-      }
-    );
-
-    const rawText = parseResp.data.content.filter(b => b.type === 'text').map(b => b.text).join('');
-    const cleanJson = rawText.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
-    const parsed = JSON.parse(cleanJson);
-    const noticias = parsed.noticias || [];
-
-    if (!noticias.length) throw new Error('Sin noticias');
-
-    noticiasCache = noticias;
-    noticiasCacheTime = Date.now();
-    console.log(`[NOTICIAS] ${noticias.length} noticias generadas`);
-    res.json({ ok: true, noticias, desde_cache: false });
-
-  } catch (err) {
-    console.error('[NOTICIAS] Error:', err.message);
-    if (noticiasCache) return res.json({ ok: true, noticias: noticiasCache, desde_cache: true });
-    res.status(500).json({ ok: false, error: err.message });
-  }
-});
  *   POST /api/scrape          → fuerza un scraping manual (requiere API_KEY)
  *
  * Variables de entorno (.env):
@@ -550,10 +479,10 @@ Usá cifras reales del mercado argentino 2025-2026. SOLO JSON, nada más.`,
       .map(b => b.text)
       .join('');
  
-    const cleanJson = rawText
-      .replace(/```json\s*/gi, '')
-      .replace(/```\s*/gi, '')
-      .trim();
+    const start = rawText.indexOf('{');
+    const end = rawText.lastIndexOf('}');
+    if (start === -1 || end === -1) throw new Error('No se encontro JSON en la respuesta');
+    const cleanJson = rawText.slice(start, end + 1);
  
     const parsed = JSON.parse(cleanJson);
     const noticias = parsed.noticias || [];
