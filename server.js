@@ -604,6 +604,5 @@ initDB().then(async () => {
     }
   }).catch(err => console.warn('[INICIO] Noticias RSS:', err.message));
  
-  // Intentar actualizar precios desde PDF
-  actualizarDesdePDF().catch(err => console.warn('[INICIO] PDF update:', err.message));
+
 });
