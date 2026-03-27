@@ -291,7 +291,7 @@ async function getMergedData() {
 // ─────────────────────────────────────────────
 // AUTO-UPDATE MENSUAL desde PDF ZonaProp
 // ─────────────────────────────────────────────
-async function //actualizarDesdePDF() {
+async function actualizarDesdePDF() {
   const now        = new Date();
   const reportDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const year       = reportDate.getFullYear();
