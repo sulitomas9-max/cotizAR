@@ -761,10 +761,14 @@ function filtrarCat(cat, el) {
  
 function renderTicker(noticias) {
   const track = document.getElementById('ticker-track');
-  if (!noticias.length) { track.innerHTML = '<span class="ticker-loading">Sin noticias disponibles</span>'; return; }
- 
-  // Duplicamos los items para loop infinito
+
+  if (!noticias.length) {
+    track.innerHTML = '<span class="ticker-loading">Sin noticias disponibles</span>';
+    return;
+  }
+
   const items = [...noticias, ...noticias];
+
   track.innerHTML = items.map(n =>
     `<a class="ticker-item" href="${n.link}" target="_blank" rel="noopener">
       <span class="ticker-dot"></span>
@@ -772,6 +776,11 @@ function renderTicker(noticias) {
       <span class="ticker-source">${n.fuente}</span>
     </a>`
   ).join('');
+
+  // 🔥 velocidad nueva (más rápida)
+  const duracion = Math.max(18, noticias.length * 3);
+  track.style.animationDuration = duracion + 's';
+}
  
   // Ajustar velocidad según cantidad de items
  const duracion = Math.max(20, noticias.length * 4);;
