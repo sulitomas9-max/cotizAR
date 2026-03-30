@@ -112,11 +112,23 @@ const RSS_SOURCES = [
  
 // Palabras clave para filtrar solo noticias inmobiliarias o económicas relevantes
 const KEYWORDS_INMOBILIARIO = [
-  'inmobili', 'departamento', 'alquiler', 'vivienda', 'propiedad', 'hipotecar',
-  'crédito', 'credito', 'UVA', 'escritura', 'barrio', 'dólar', 'dolar', 'inflaci',
-  'precio', 'mercado', 'm²', 'metro', 'palermo', 'belgrano', 'recoleta', 'construcción',
-  'construcci', 'inversión', 'inversion', 'renta', 'rentabilidad', 'tasas', 'banco',
-  'compraventa', 'real estate', 'caba',
+  'inmobili',
+  'departamento', 'depto',
+  'alquiler', 'alquileres',
+  'vivienda',
+  'hipoteca', 'hipotecar',
+  'crédito hipotecario', 'credito hipotecario',
+  'uva',
+  'escritura',
+  'compraventa',
+  'real estate',
+  'm²', 'metro cuadrado', 'precio por metro',
+  'construcción residencial', 'construccion residencial',
+  'desarrolladora', 'desarrollos inmobili',
+  'inquilino', 'locatario', 'locador',
+  'propiedad horizontal',
+  'barrio cerrado', 'country',
+  'puerto madero', 'palermo hollywood', 'palermo soho',
 ];
  
 function esRelevante(titulo, descripcion) {
@@ -604,5 +616,6 @@ initDB().then(async () => {
     }
   }).catch(err => console.warn('[INICIO] Noticias RSS:', err.message));
  
-
+  // Intentar actualizar precios desde PDF
+  actualizarDesdePDF().catch(err => console.warn('[INICIO] PDF update:', err.message));
 });
