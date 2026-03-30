@@ -18,7 +18,7 @@
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(--ink); }
-
+ 
     /* ── TICKER ── */
     .news-ticker {
       background: var(--ink);
@@ -94,7 +94,7 @@
       color: rgba(250,248,244,.4);
       padding: 0 20px;
     }
-
+ 
     /* ── NAV ── */
     nav { display:flex; align-items:center; justify-content:space-between; padding:16px 40px; border-bottom:1px solid var(--border); background:var(--paper); position:sticky; top:0; z-index:100; }
     .logo { font-family:'DM Serif Display',serif; font-size:22px; }
@@ -102,30 +102,30 @@
     .status-dot { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--ink3); }
     .dot { width:7px; height:7px; border-radius:50%; background:#ccc; transition:background .3s; }
     .dot.live { background:#22c55e; }
-
+ 
     .hero { max-width:720px; margin:0 auto; padding:52px 24px 40px; text-align:center; }
     .eyebrow { display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:500; color:var(--accent); letter-spacing:.8px; text-transform:uppercase; margin-bottom:18px; padding:4px 12px; border:1px solid rgba(200,82,26,.25); border-radius:20px; background:var(--accent-light); }
     .hero h1 { font-family:'DM Serif Display',serif; font-size:48px; line-height:1.06; letter-spacing:-.8px; margin-bottom:12px; }
     .hero h1 em { font-style:italic; color:var(--accent); }
     .hero p { font-size:15px; color:var(--ink2); line-height:1.6; }
-
+ 
     .form-wrapper { max-width:700px; margin:0 auto 40px; padding:0 24px; }
     .form-card { background:white; border:1px solid var(--border2); border-radius:20px; padding:28px 32px; }
     .section-heading { font-size:11px; font-weight:500; text-transform:uppercase; letter-spacing:.6px; color:var(--ink3); margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border); }
     .form-block { margin-bottom:22px; }
     .two-col { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-
+ 
     .field { display:flex; flex-direction:column; gap:5px; }
     .field label { font-size:12px; font-weight:500; color:var(--ink2); letter-spacing:.3px; }
     .field select, .field input { font-family:'DM Sans',sans-serif; font-size:14px; padding:10px 12px; border:1px solid var(--border2); border-radius:var(--radius-sm); background:var(--paper); color:var(--ink); outline:none; transition:border-color .15s,box-shadow .15s; -webkit-appearance:none; appearance:none; height:auto; }
     .field select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234a4840' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; padding-right:32px; }
     .field select:focus, .field input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(200,82,26,.1); }
-
+ 
     .pills { display:flex; background:var(--paper); border:1px solid var(--border2); border-radius:var(--radius-sm); padding:3px; gap:2px; }
     .pill { flex:1; padding:7px 6px; border:none; background:transparent; border-radius:4px; font-family:'DM Sans',sans-serif; font-size:12px; color:var(--ink2); cursor:pointer; transition:all .15s; white-space:nowrap; text-align:center; }
     .pill:hover { color:var(--ink); background:rgba(15,14,12,.05); }
     .pill.on { background:white; color:var(--ink); font-weight:500; box-shadow:0 1px 3px rgba(15,14,12,.12),0 0 0 .5px rgba(15,14,12,.08); }
-
+ 
     .age-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
     .age-card { padding:10px 12px; border:1px solid var(--border2); border-radius:var(--radius-sm); cursor:pointer; background:var(--paper); transition:all .15s; }
     .age-card:hover { border-color:var(--accent2); }
@@ -133,7 +133,7 @@
     .age-card .ac-title { font-size:13px; font-weight:500; color:var(--ink); margin-bottom:2px; }
     .age-card .ac-sub { font-size:11px; color:var(--ink3); margin-bottom:5px; }
     .age-card.on .ac-title { color:var(--accent); }
-
+ 
     .amenities-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-bottom:10px; }
     .am-chip { display:flex; align-items:center; gap:7px; padding:8px 10px; border:1px solid var(--border2); border-radius:var(--radius-sm); cursor:pointer; background:var(--paper); transition:all .15s; user-select:none; }
     .am-chip:hover { border-color:var(--accent2); }
@@ -143,12 +143,12 @@
     .am-chip.on .am-label { color:var(--blue); font-weight:500; }
     .am-summary { padding:9px 13px; background:var(--blue-light); border-radius:var(--radius-sm); font-size:12px; color:var(--blue); display:none; line-height:1.5; }
     .am-summary.show { display:block; }
-
+ 
     .cta-btn { width:100%; margin-top:20px; padding:14px; background:var(--ink); color:var(--paper); border:none; border-radius:var(--radius-sm); font-family:'DM Sans',sans-serif; font-size:15px; font-weight:500; cursor:pointer; letter-spacing:.2px; transition:background .2s,transform .1s; }
     .cta-btn:hover { background:var(--accent); }
     .cta-btn:active { transform:scale(.99); }
     .cta-btn:disabled { background:var(--paper3); color:var(--ink3); cursor:default; }
-
+ 
     .results-wrapper { max-width:700px; margin:0 auto 64px; padding:0 24px; display:none; }
     .result-main { background:var(--ink); border-radius:16px; padding:26px 30px; margin-bottom:14px; color:var(--paper); }
     .result-label { font-size:12px; color:rgba(250,248,244,.5); text-transform:uppercase; letter-spacing:.6px; margin-bottom:6px; }
@@ -158,7 +158,7 @@
     .result-badges { display:flex; gap:6px; flex-wrap:wrap; }
     .badge { padding:3px 10px; border-radius:20px; font-size:11px; font-weight:500; }
     .b-muted { background:rgba(250,248,244,.1); color:rgba(250,248,244,.75); }
-
+ 
     .breakdown-card { background:white; border:1px solid var(--border); border-radius:var(--radius); padding:18px 22px; margin-bottom:14px; }
     .card-title { font-size:11px; font-weight:500; color:var(--ink3); text-transform:uppercase; letter-spacing:.5px; margin-bottom:14px; }
     .bdr { display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); font-size:13px; }
@@ -172,13 +172,13 @@
     .c-neg { color:#dc2626; }
     .c-neu { color:var(--ink3); }
     .c-acc { color:var(--accent); }
-
+ 
     .metrics-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:14px; }
     .metric-card { background:white; border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; }
     .m-label { font-size:11px; color:var(--ink3); text-transform:uppercase; letter-spacing:.4px; margin-bottom:4px; }
     .m-value { font-size:19px; font-weight:500; }
     .m-sub { font-size:11px; color:var(--ink3); margin-top:2px; }
-
+ 
     .bars-card { background:white; border:1px solid var(--border); border-radius:var(--radius); padding:18px 22px; margin-bottom:14px; }
     .bar-row { display:flex; align-items:center; gap:10px; margin-bottom:6px; }
     .bar-name { width:140px; font-size:12px; color:var(--ink2); text-align:right; flex-shrink:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -188,18 +188,18 @@
     .bar-val { width:105px; font-size:11px; font-weight:500; color:var(--ink2); }
     .bar-row.active .bar-name { color:var(--ink); font-weight:500; }
     .bar-row.active .bar-val { color:var(--accent); }
-
+ 
     .alq-card { background:var(--green-light); border:1px solid rgba(26,102,64,.15); border-radius:var(--radius); padding:18px 22px; margin-bottom:14px; }
     .alq-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
     .a-label { font-size:11px; color:rgba(26,102,64,.7); margin-bottom:2px; }
     .a-value { font-size:17px; font-weight:500; color:var(--green); }
-
+ 
     .disclaimer { background:var(--paper2); border-radius:var(--radius-sm); padding:11px 14px; font-size:11px; color:var(--ink3); line-height:1.6; border-left:3px solid var(--paper3); }
     .loader { display:flex; align-items:center; gap:10px; font-size:14px; color:var(--ink2); padding:24px; justify-content:center; }
     .spinner { width:18px; height:18px; border:2px solid var(--paper3); border-top-color:var(--accent); border-radius:50%; animation:spin .7s linear infinite; }
     @keyframes spin { to { transform:rotate(360deg); } }
     .error-msg { background:#fef2f2; border:1px solid rgba(155,28,28,.15); border-radius:var(--radius-sm); padding:12px 16px; font-size:14px; color:#9b1c1c; }
-
+ 
     /* ── SECCIÓN NOTICIAS ── */
     .news-wrapper {
       max-width: 700px;
@@ -235,7 +235,7 @@
     .news-refresh-btn:disabled { opacity:.45; cursor:default; }
     .refresh-icon { display:inline-block; transition:transform .5s; }
     .news-refresh-btn.spinning .refresh-icon { animation:spin .7s linear infinite; }
-
+ 
     .news-cats { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; }
     .ncat {
       padding:5px 12px;
@@ -250,7 +250,7 @@
     }
     .ncat:hover { border-color:var(--accent2); color:var(--ink2); }
     .ncat.on { background:var(--ink); color:var(--paper); border-color:var(--ink); }
-
+ 
     .news-grid { display:grid; grid-template-columns:1fr; gap:10px; }
     .news-card {
       background:white;
@@ -315,16 +315,16 @@
     }
     .nc-arrow { font-size:14px; color:var(--ink3); flex-shrink:0; padding-top:2px; transition:color .15s; }
     .news-card:hover .nc-arrow { color:var(--accent); }
-
+ 
     .news-skeleton { display:flex; flex-direction:column; gap:10px; }
     .sk-card { background:white; border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px; }
     .sk-line { height:11px; background:var(--paper3); border-radius:4px; margin-bottom:8px; animation:skpulse 1.4s ease-in-out infinite; }
     @keyframes skpulse { 0%,100%{opacity:1} 50%{opacity:.4} }
     .news-empty { text-align:center; padding:32px 20px; color:var(--ink3); font-size:13px; background:var(--paper2); border-radius:var(--radius); }
     .news-footer-note { margin-top:12px; font-size:11px; color:var(--ink3); display:flex; align-items:center; gap:6px; }
-
+ 
     footer { text-align:center; padding:28px 24px; font-size:12px; color:var(--ink3); border-top:1px solid var(--border); }
-
+ 
     @media(max-width:600px){
       nav{padding:12px 16px} .hero h1{font-size:32px}
       .form-card{padding:20px} .two-col,.age-grid,.amenities-grid{grid-template-columns:1fr 1fr}
@@ -334,7 +334,7 @@
   </style>
 </head>
 <body>
-
+ 
 <!-- ── TICKER DE NOTICIAS ── -->
 <div class="news-ticker">
   <div class="ticker-label">Noticias</div>
@@ -344,22 +344,22 @@
     </div>
   </div>
 </div>
-
+ 
 <nav>
   <div class="logo">Cotiz<span>AR</span></div>
   <div style="display:flex;align-items:center;gap:14px">
     <div class="status-dot"><div class="dot" id="sdot"></div><span id="stxt">Verificando...</span></div>
   </div>
 </nav>
-
+ 
 <section class="hero">
   <div class="eyebrow">Datos en tiempo real · CABA</div>
   <h1>Cotizá tu depto<br>con <em>todos los factores</em></h1>
   <p>Barrio · m² · Antigüedad · Amenities · Scraped de ZonaProp y Argenprop diariamente</p>
 </section>
-
+ 
 <div class="form-wrapper"><div class="form-card">
-
+ 
   <div class="form-block">
     <div class="section-heading">Datos básicos</div>
     <div class="two-col" style="margin-bottom:12px">
@@ -386,7 +386,7 @@
       </div>
     </div>
   </div>
-
+ 
   <div class="form-block" id="age-block">
     <div class="section-heading">Antigüedad del edificio</div>
     <div class="age-grid" id="age-grid"></div>
@@ -394,18 +394,18 @@
       Esta opción es construcción nueva — la antigüedad no aplica.
     </div>
   </div>
-
+ 
   <div class="form-block">
     <div class="section-heading">Amenities y servicios del edificio</div>
     <div class="amenities-grid" id="am-grid"></div>
     <div class="am-summary" id="am-summary"></div>
   </div>
-
+ 
   <button class="cta-btn" id="cta" onclick="cotizar()">Calcular cotización</button>
 </div></div>
-
+ 
 <div class="results-wrapper" id="results"></div>
-
+ 
 <!-- ── SECCIÓN NOTICIAS ── -->
 <section class="news-wrapper">
   <div class="news-header">
@@ -419,7 +419,7 @@
       <span class="refresh-icon">↻</span> Actualizar
     </button>
   </div>
-
+ 
   <div class="news-cats" id="news-cats">
     <span class="ncat on" data-cat="todo" onclick="filtrarCat('todo',this)">Todas</span>
     <span class="ncat" data-cat="reporte" onclick="filtrarCat('reporte',this)">Reporte Inmobiliario</span>
@@ -428,7 +428,7 @@
     <span class="ncat" data-cat="cronista" onclick="filtrarCat('cronista',this)">El Cronista</span>
     <span class="ncat" data-cat="lanacion" onclick="filtrarCat('lanacion',this)">La Nación</span>
   </div>
-
+ 
   <div id="news-container">
     <div class="news-skeleton">
       <div class="sk-card"><div class="sk-line" style="width:30%"></div><div class="sk-line" style="width:85%"></div><div class="sk-line" style="width:60%"></div></div>
@@ -436,22 +436,22 @@
       <div class="sk-card"><div class="sk-line" style="width:35%"></div><div class="sk-line" style="width:80%"></div><div class="sk-line" style="width:65%"></div></div>
     </div>
   </div>
-
+ 
   <div class="news-footer-note">
     <span>📡</span>
     <span>Noticias scrapeadas de medios argentinos · Al hacer clic vas directamente a la nota original</span>
   </div>
 </section>
-
+ 
 <footer>
   <p style="margin-bottom:6px;font-weight:500;color:var(--ink2)">Cómo funciona</p>
   <p>Scraping diario de ZonaProp + Argenprop · Mediana filtrada con IQR · Ajuste por antigüedad y amenities con factores basados en diferenciales de mercado CABA · Precios de oferta publicada.</p>
 </footer>
-
+ 
 <script>
 const API = '';
 const state = { op:'venta', tipo:'depto', antiguedad:'16-30', amenities: new Set() };
-
+ 
 const EDAD = [
   { key:'0-5',          label:'Nuevo',        sub:'0–5 años'     },
   { key:'6-15',         label:'Moderno',      sub:'6–15 años'    },
@@ -460,7 +460,7 @@ const EDAD = [
   { key:'50+',          label:'Muy antiguo',  sub:'+50 años'     },
   { key:'refaccionado', label:'Reciclado',    sub:'Refaccionado' },
 ];
-
+ 
 const AMS = [
   { key:'cochera',      label:'Cochera incluida',  icon:'🚗' },
   { key:'pileta',       label:'Pileta',            icon:'🏊' },
@@ -475,7 +475,7 @@ const AMS = [
   { key:'laundry',      label:'Laundry',           icon:'🧺' },
   { key:'bicicletero',  label:'Bicicletero',       icon:'🚲' },
 ];
-
+ 
 function renderEdad() {
   document.getElementById('age-grid').innerHTML = EDAD.map(a =>
     `<div class="age-card ${a.key===state.antiguedad?'on':''}" onclick="setEdad('${a.key}',this)">
@@ -484,13 +484,13 @@ function renderEdad() {
     </div>`
   ).join('');
 }
-
+ 
 function setEdad(key, el) {
   state.antiguedad = key;
   document.querySelectorAll('.age-card').forEach(c => c.classList.remove('on'));
   el.classList.add('on');
 }
-
+ 
 function renderAms() {
   document.getElementById('am-grid').innerHTML = AMS.map(a =>
     `<label class="am-chip ${state.amenities.has(a.key)?'on':''}" onclick="toggleAm('${a.key}',this)">
@@ -500,13 +500,13 @@ function renderAms() {
   ).join('');
   syncAmSummary();
 }
-
+ 
 function toggleAm(key, el) {
   state.amenities.has(key) ? state.amenities.delete(key) : state.amenities.add(key);
   el.classList.toggle('on');
   syncAmSummary();
 }
-
+ 
 function syncAmSummary() {
   const s = document.getElementById('am-summary');
   const sel = [...state.amenities];
@@ -515,7 +515,7 @@ function syncAmSummary() {
   s.innerHTML = `<strong>${sel.length} amenities seleccionados:</strong> ${sorted.map(a=>a.icon+' '+a.label).join(' · ')}`;
   s.classList.add('show');
 }
-
+ 
 function setPill(g, v, el) {
   state[g] = v;
   el.closest('.pills').querySelectorAll('.pill').forEach(b => b.classList.remove('on'));
@@ -530,10 +530,10 @@ function setPill(g, v, el) {
     if (sinEdad) { state.antiguedad = '0-5'; renderEdad(); }
   }
 }
-
+ 
 const usd = n => 'USD ' + Math.round(n).toLocaleString('es-AR');
 const ars = n => '$ ' + Math.round(n).toLocaleString('es-AR');
-
+ 
 async function checkStatus() {
   try {
     const d = await fetch(`${API}/api/status`).then(r=>r.json());
@@ -549,7 +549,7 @@ async function checkStatus() {
     }
   } catch { document.getElementById('stxt').textContent = 'Sin conexión'; }
 }
-
+ 
 async function cargarBarrios() {
   try {
     const d = await fetch(`${API}/api/barrios`).then(r=>r.json());
@@ -563,20 +563,20 @@ async function cargarBarrios() {
     }
   } catch(e) { console.warn('Backend no disponible:', e.message); }
 }
-
+ 
 async function cotizar() {
   const barrio = document.getElementById('barrio').value;
   const metros = document.getElementById('metros').value;
   if (!barrio) { alert('Seleccioná un barrio'); return; }
   if (!metros||metros<10) { alert('Ingresá una superficie válida'); return; }
-
+ 
   const btn = document.getElementById('cta');
   btn.disabled=true; btn.textContent='Calculando...';
   const res = document.getElementById('results');
   res.style.display='block';
   res.innerHTML='<div class="loader"><div class="spinner"></div> Calculando con todos los factores...</div>';
   res.scrollIntoView({behavior:'smooth'});
-
+ 
   try {
     const url = `${API}/api/cotizar?barrio=${barrio}&metros=${metros}&tipo=${state.tipo}&op=${state.op}&antiguedad=${state.antiguedad}&amenities=${[...state.amenities].join(',')}`;
     const d = await fetch(url).then(r=>r.json());
@@ -588,11 +588,11 @@ async function cotizar() {
     btn.disabled=false; btn.textContent='Calcular cotización';
   }
 }
-
+ 
 function renderResults(c) {
   const v=c.venta, aj=c.ajustes, m=c.mercado, alq=c.alquiler;
   const soloAlquiler = c.inputs.op === 'alquiler';
-
+ 
   let html = `<div class="result-main">
     <div class="result-label">${c.barrio.nombre} · ${c.inputs.metros} m² · ${c.inputs.tipo} · ${EDAD.find(e=>e.key===c.inputs.antiguedad)?.label||''}</div>
     ${soloAlquiler ? '' : `
@@ -606,12 +606,12 @@ function renderResults(c) {
       <span class="badge b-muted">${m.muestras_scraping?m.muestras_scraping+' avisos':m.datos_desde}</span>
     </div>
   </div>`;
-
+ 
   if (!soloAlquiler) {
     const fT=aj.factor_tipo, fA=aj.factor_antiguedad, fAm=aj.factor_amenities;
     const sc = p => p>0?'c-pos':p<0?'c-neg':'c-neu';
     const amenStr = fAm.detalle.length ? fAm.detalle.map(d=>d.label).join(', ') : 'Ninguno seleccionado';
-
+ 
     html += `<div class="breakdown-card">
       <div class="card-title">Desglose de ajustes sobre precio/m²</div>
       <div class="bdr">
@@ -643,7 +643,7 @@ function renderResults(c) {
         <div class="bdr-right c-acc">${usd(v.precio_usd)}</div>
       </div>
     </div>`;
-
+ 
     const diffP = ((v.m2_usd - m.promedio_caba_m2) / m.promedio_caba_m2 * 100).toFixed(1);
     html += `<div class="metrics-grid">
       <div class="metric-card"><div class="m-label">Precio/m² ajustado</div><div class="m-value">${usd(v.m2_usd)}</div><div class="m-sub">con todos los factores</div></div>
@@ -651,13 +651,13 @@ function renderResults(c) {
       <div class="metric-card"><div class="m-label">Ajustes aplicados</div><div class="m-value" style="color:${aj.diferencia_vs_base_pct>=0?'var(--accent)':'var(--blue)'}">${aj.diferencia_vs_base_pct>=0?'Aumentan':'Reducen'}</div><div class="m-sub">el precio base del barrio</div></div>
     </div>`;
   }
-
+ 
   const compar = [
     {n:'Puerto Madero',m2:6163},{n:'Palermo',m2:3362},{n:'Belgrano',m2:3100},
     {n:c.barrio.nombre,m2:v.m2_usd,hl:true},
     {n:'Caballito',m2:2350},{n:'Flores',m2:1950},{n:'Lugano',m2:1063},
   ].filter((x,i,a)=>a.findIndex(y=>y.n===x.n)===i).sort((a,b)=>b.m2-a.m2);
-
+ 
   html += `<div class="bars-card"><div class="card-title">Comparativa barrios · USD/m² (precio ajustado)</div>
     ${compar.map(r=>`<div class="bar-row ${r.hl?'active':''}">
       <span class="bar-name">${r.n}</span>
@@ -665,7 +665,7 @@ function renderResults(c) {
       <span class="bar-val">${usd(r.m2)}/m²</span>
     </div>`).join('')}
   </div>`;
-
+ 
   if (alq) {
     const fuenteAlq = alq.fuente === 'scraping_tiempo_real' ? `${alq.muestras} avisos scrapeados` : 'Estimación (sin datos scrapeados aún)';
     html += `<div class="alq-card">
@@ -677,12 +677,12 @@ function renderResults(c) {
       </div>
     </div>`;
   }
-
+ 
   html += `<div class="disclaimer">
     <strong>Fuente:</strong> ZonaProp + Argenprop scraped diariamente · Factores de antigüedad y amenities basados en diferenciales de mercado CABA ·
     Dólar oficial venta $${v.dolar_mep.toLocaleString('es-AR')} · Precio de oferta publicada · Cotización orientativa.
   </div>`;
-
+ 
   document.getElementById('results').innerHTML = html;
   setTimeout(()=>{
     document.querySelectorAll('.bar-fill').forEach((el,i)=>{
@@ -691,13 +691,13 @@ function renderResults(c) {
     });
   },50);
 }
-
+ 
 // ──────────────────────────────────────────
 // NOTICIAS — RSS scrapeado desde el backend
 // ──────────────────────────────────────────
 let noticiasCache = null;
 let catActiva = 'todo';
-
+ 
 const SOURCE_CLASSES = {
   reporte:      'src-reporte',
   ambito:       'src-ambito',
@@ -706,7 +706,7 @@ const SOURCE_CLASSES = {
   lanacion:     'src-lanacion',
   iprofesional: 'src-iprofesional',
 };
-
+ 
 function timeAgo(dateStr) {
   if (!dateStr) return '';
   const d = new Date(dateStr);
@@ -718,10 +718,10 @@ function timeAgo(dateStr) {
   if (hs < 24)   return `hace ${hs}h`;
   return `hace ${Math.floor(hs/24)}d`;
 }
-
+ 
 async function cargarNoticias(force = false) {
   if (noticiasCache && !force) { renderNoticias(noticiasCache); return; }
-
+ 
   const btn = document.getElementById('news-refresh-btn');
   const cont = document.getElementById('news-container');
   btn.disabled = true;
@@ -731,7 +731,7 @@ async function cargarNoticias(force = false) {
     <div class="sk-card"><div class="sk-line" style="width:25%"></div><div class="sk-line" style="width:75%"></div><div class="sk-line" style="width:55%"></div></div>
     <div class="sk-card"><div class="sk-line" style="width:35%"></div><div class="sk-line" style="width:80%"></div><div class="sk-line" style="width:65%"></div></div>
   </div>`;
-
+ 
   try {
     const resp = await fetch('/api/noticias');
     const data = await resp.json();
@@ -739,7 +739,7 @@ async function cargarNoticias(force = false) {
     noticiasCache = data.noticias;
     renderTicker(noticiasCache);
     renderNoticias(noticiasCache);
-
+ 
     // Actualizar subtítulo con timestamp
     const now = new Date().toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'});
     document.getElementById('news-update-time').textContent = `Actualizado a las ${now} · Fuentes: Reporte Inmobiliario, Ámbito, Infobae, Cronista, La Nación`;
@@ -751,18 +751,18 @@ async function cargarNoticias(force = false) {
     btn.classList.remove('spinning');
   }
 }
-
+ 
 function filtrarCat(cat, el) {
   catActiva = cat;
   document.querySelectorAll('.ncat').forEach(c => c.classList.remove('on'));
   el.classList.add('on');
   if (noticiasCache) renderNoticias(noticiasCache);
 }
-
+ 
 function renderTicker(noticias) {
   const track = document.getElementById('ticker-track');
   if (!noticias.length) { track.innerHTML = '<span class="ticker-loading">Sin noticias disponibles</span>'; return; }
-
+ 
   // Duplicamos los items para loop infinito
   const items = [...noticias, ...noticias];
   track.innerHTML = items.map(n =>
@@ -772,21 +772,21 @@ function renderTicker(noticias) {
       <span class="ticker-source">${n.fuente}</span>
     </a>`
   ).join('');
-
+ 
   // Ajustar velocidad según cantidad de items
-  const duracion = Math.max(40, noticias.length * 8);
+  const duracion = Math.max(20, noticias.length * 4);
   track.style.animationDuration = duracion + 's';
 }
-
+ 
 function renderNoticias(noticias) {
   const cont = document.getElementById('news-container');
   const lista = catActiva === 'todo' ? noticias : noticias.filter(n => n.sourceId === catActiva);
-
+ 
   if (!lista.length) {
     cont.innerHTML = `<div class="news-empty">No hay noticias de esta fuente por ahora.</div>`;
     return;
   }
-
+ 
   cont.innerHTML = `<div class="news-grid">${lista.map(n => {
     const badgeClass = SOURCE_CLASSES[n.sourceId] || 'src-default';
     const age = timeAgo(n.pubDate);
@@ -803,7 +803,7 @@ function renderNoticias(noticias) {
     </a>`;
   }).join('')}</div>`;
 }
-
+ 
 checkStatus();
 cargarBarrios();
 renderEdad();
