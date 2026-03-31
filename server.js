@@ -112,23 +112,37 @@ const RSS_SOURCES = [
  
 // Palabras clave para filtrar solo noticias inmobiliarias o económicas relevantes
 const KEYWORDS_INMOBILIARIO = [
-  'inmobili',
-  'departamento', 'depto',
-  'alquiler', 'alquileres',
-  'vivienda',
-  'hipoteca', 'hipotecar',
-  'crédito hipotecario', 'credito hipotecario',
-  'uva',
-  'escritura',
-  'compraventa',
-  'real estate',
-  'm²', 'metro cuadrado', 'precio por metro',
-  'construcción residencial', 'construccion residencial',
-  'desarrolladora', 'desarrollos inmobili',
+  // Sector inmobiliario directo
+  'inmobili', 'departamento', 'depto',
+  'alquiler', 'alquileres', 'vivienda', 'propied',
+  'hipoteca', 'crédito hipotecario', 'credito hipotecario',
+  'uva', 'escritura', 'compraventa', 'real estate',
+  'm²', 'metro cuadrado', 'construcción', 'construcci',
+  'desarrolladora', 'desarrollos', 'fideicomiso',
   'inquilino', 'locatario', 'locador',
-  'propiedad horizontal',
-  'barrio cerrado', 'country',
-  'puerto madero', 'palermo hollywood', 'palermo soho',
+  'propiedad horizontal', 'barrio cerrado', 'country',
+  'procrear', 'acceso a la vivienda',
+  'mercado inmobiliario', 'oferta inmobiliaria',
+  'renta inmobiliaria', 'inversión inmobiliaria', 'inversion inmobiliaria',
+  // Terrenos
+  'terreno', 'lote ', 'loteo', 'parcela', 'suelo urbano',
+  // Dólar (las propiedades se transan en USD)
+  'dólar', 'dolar', 'tipo de cambio',
+  'cepo', 'blanqueo', 'brecha cambiaria',
+  'reservas del bcra', 'devaluaci',
+  // Leyes y regulaciones
+  'ley de alquileres', 'dnu', 'decreto',
+  'proyecto de ley', 'regulaci',
+  'código urbanístico', 'codigo urbanistico',
+  'plusvalía', 'plusvalia', 'impuesto inmobiliario',
+  'bienes raíces', 'bienes raices',
+  'registro de la propiedad', 'reforma tributaria',
+  // Crédito
+  'banco hipotecario', 'tasa hipotecaria',
+  'préstamo uva', 'prestamo uva', 'financiamiento',
+  // Macro ligada al sector
+  'inflaci', 'tasas de interés', 'tasas de interes',
+  'riesgo país', 'riesgo pais', 'bcra',
 ];
  
 function esRelevante(titulo, descripcion) {
