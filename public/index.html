@@ -76,13 +76,8 @@
     .amb-card.on { background:var(--accent-light); border-color:var(--accent); box-shadow:0 0 0 2px rgba(200,82,26,.15); }
     .amb-num { font-size:20px; font-weight:600; color:var(--ink); line-height:1; }
     .amb-label { font-size:10px; color:var(--ink3); line-height:1.2; }
-    .amb-factor { font-size:9px; font-weight:500; padding:2px 5px; border-radius:8px; margin-top:2px; }
     .amb-card.on .amb-num { color:var(--accent); }
     .amb-card.on .amb-label { color:var(--accent); }
-    .f-pos  { background:rgba(26,102,64,.1);  color:var(--green); }
-    .f-neu  { background:var(--paper3);        color:var(--ink3);  }
-    .f-neg  { background:rgba(200,82,26,.1);  color:var(--accent); }
-    .amb-hint { margin-top:8px; font-size:11px; color:var(--ink3); padding:7px 10px; background:var(--paper2); border-radius:var(--radius-sm); line-height:1.4; }
  
     .age-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
     .age-card { padding:10px 12px; border:1px solid var(--border2); border-radius:var(--radius-sm); cursor:pointer; background:var(--paper); transition:all .15s; }
@@ -291,9 +286,6 @@
   <div class="form-block">
     <div class="section-heading">Cantidad de ambientes</div>
     <div class="ambientes-grid" id="amb-grid"></div>
-    <div class="amb-hint" id="amb-hint">
-      Unidades más chicas tienen mayor precio/m² por su alta demanda inversora y de alquiler en CABA.
-    </div>
   </div>
  
   <div class="form-block" id="age-block">
@@ -391,46 +383,13 @@ const AMBIENTES = [
   { num: 5, label: '5+ amb',     factor: 0.85 },
 ];
  
-function getFactorClass(f) {
-  if (f > 1)  return 'f-pos';
-  if (f < 1)  return 'f-neg';
-  return 'f-neu';
-}
- 
-function getFactorLabel(f) {
-  if (f > 1)  return `+${((f-1)*100).toFixed(0)}% /m²`;
-  if (f < 1)  return `${((f-1)*100).toFixed(0)}% /m²`;
-  return 'base';
-}
- 
 function renderAmbientes() {
-  const metros = parseFloat(document.getElementById('metros').value) || 0;
- 
-  document.getElementById('amb-grid').innerHTML = AMBIENTES.map(a => {
-    // Ajuste fino igual que en el server
-    let fActual = a.factor;
-    let hint = '';
-    if (a.num === 3 && metros > 0 && metros < 55) { fActual = parseFloat((fActual * 0.98).toFixed(4)); hint = ' *'; }
-    if (a.num === 2 && metros > 55)               { fActual = parseFloat((fActual * 0.98).toFixed(4)); hint = ' *'; }
- 
-    const cls = getFactorClass(fActual);
-    const lbl = getFactorLabel(fActual);
- 
-    return `<div class="amb-card ${state.ambientes===a.num?'on':''}" onclick="setAmbientes(${a.num},this)">
+  document.getElementById('amb-grid').innerHTML = AMBIENTES.map(a =>
+    `<div class="amb-card ${state.ambientes===a.num?'on':''}" onclick="setAmbientes(${a.num},this)">
       <div class="amb-num">${a.num === 5 ? '5+' : a.num}</div>
       <div class="amb-label">${a.label}</div>
-      <div class="amb-factor ${cls}">${lbl}${hint}</div>
-    </div>`;
-  }).join('');
- 
-  // Hint dinámico
-  const hint = document.getElementById('amb-hint');
-  const m = parseFloat(document.getElementById('metros').value);
-  if (m > 0 && ((state.ambientes === 3 && m < 55) || (state.ambientes === 2 && m > 55))) {
-    hint.textContent = '* Ajuste fino aplicado: superficie inconsistente con cantidad de ambientes típica en CABA (−2% adicional).';
-  } else {
-    hint.textContent = 'Unidades más chicas tienen mayor precio/m² por su alta demanda inversora y de alquiler en CABA.';
-  }
+    </div>`
+  ).join('');
 }
  
 function setAmbientes(num, el) {
