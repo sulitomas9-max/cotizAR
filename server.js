@@ -1117,6 +1117,18 @@ initDB().then(async () => {
     if (result.ok) { escriturasCache = result; escriturasCacheTs = Date.now(); }
   }).catch(err => console.warn('[INICIO] Escrituras:', err.message));
 
+  // Si no hay datos en cache, correr scraping ahora
+  getStatus().then(status => {
+    if (!status.existe) {
+      console.log('[INICIO] No hay datos en cache — iniciando scraping ahora...');
+      scrapeAll().then(r => {
+        console.log(`[INICIO] Scraping completado: ${Object.keys(r).length} barrios`);
+      }).catch(err => console.error('[INICIO] Error en scraping inicial:', err.message));
+    } else {
+      console.log(`[INICIO] Cache existente: ${status.total_barrios} barrios (${status.ultima_actualizacion})`);
+    }
+  });
+
   // ── CRON DIARIO: scraping de precios todos los días a las 3am ──
   // Formato: minuto hora * * * (todos los días)
   cron.schedule('0 3 * * *', async () => {
