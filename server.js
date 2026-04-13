@@ -8,6 +8,8 @@
  *   GET /api/precios          → todos los precios del cache
  *   GET /api/status           → estado del cache y última actualización
  *   GET /api/noticias         → noticias scrapeadas de RSS (sin API externa)
+ *   GET /api/dolar            → tipo de cambio MEP en tiempo real
+ *   POST /api/alerta          → guardar alerta de precio (server-side log)
  *   POST /api/scrape          → fuerza un scraping manual (requiere API_KEY)
  *
  * Variables de entorno (.env):
@@ -15,7 +17,7 @@
  *   API_KEY=tu_clave_secreta
  *   DOLAR_MEP=1400             (tipo de cambio manual, opcional)
  */
- 
+
 require('dotenv').config();
 const express = require('express');
 const cors    = require('cors');
@@ -24,15 +26,15 @@ const path    = require('path');
 const axios   = require('axios');
 const { scrapeAll }                       = require('./scraper');
 const { initDB, cargarDatos, getStatus }  = require('./db');
- 
+
 const app     = express();
 const PORT    = process.env.PORT    || 3001;
 const API_KEY = process.env.API_KEY || 'dev-key-cambiar-en-produccion';
- 
+
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
- 
+
 // ─────────────────────────────────────────────
 // DATOS FALLBACK
 // ─────────────────────────────────────────────
@@ -64,56 +66,110 @@ const FALLBACK = {
   la_boca:          { nombre: 'La Boca',          m2_mediana: 1560, m2_min: 1150, m2_max: 2000, region: 'Sur',               alq_ratio: 0.0046 },
   lugano:           { nombre: 'Lugano',           m2_mediana: 1098, m2_min:  830, m2_max: 1420, region: 'Sur',               alq_ratio: 0.0048 },
 };
- 
+
+// ─────────────────────────────────────────────
+// DÓLAR MEP EN TIEMPO REAL
+// ─────────────────────────────────────────────
+let dolarCache    = null;
+let dolarCacheTs  = null;
+const DOLAR_TTL   = 30 * 60 * 1000; // 30 minutos
+
+async function fetchDolarMep() {
+  // Intenta ArgentinaDatos primero, luego dolarapi.com como fallback
+  const fuentes = [
+    async () => {
+      const { data } = await axios.get('https://api.argentinadatos.com/v1/cotizaciones/dolares/mep', {
+        timeout: 8000, headers: { 'Accept': 'application/json' }
+      });
+      if (Array.isArray(data) && data.length > 0) {
+        const ultimo = data[data.length - 1];
+        return { valor: parseFloat(ultimo.venta || ultimo.compra || ultimo.promedio), fuente: 'ArgentinaDatos' };
+      }
+      throw new Error('Sin datos');
+    },
+    async () => {
+      const { data } = await axios.get('https://dolarapi.com/v1/dolares/bolsa', {
+        timeout: 8000, headers: { 'Accept': 'application/json' }
+      });
+      if (data?.venta) return { valor: parseFloat(data.venta), fuente: 'DolarAPI' };
+      throw new Error('Sin datos');
+    },
+  ];
+
+  for (const fn of fuentes) {
+    try {
+      const result = await fn();
+      if (result.valor && result.valor > 100) {
+        console.log(`[DOLAR MEP] ${result.valor} (${result.fuente})`);
+        return result;
+      }
+    } catch(e) {
+      console.warn('[DOLAR MEP] Fuente falló:', e.message);
+    }
+  }
+
+  // Fallback al .env o 1400
+  const manual = parseFloat(process.env.DOLAR_MEP) || 1400;
+  console.warn('[DOLAR MEP] Usando fallback manual:', manual);
+  return { valor: manual, fuente: 'manual' };
+}
+
+async function getDolarMepActualizado() {
+  const ahora = Date.now();
+  if (dolarCache && dolarCacheTs && (ahora - dolarCacheTs < DOLAR_TTL)) {
+    return dolarCache.valor;
+  }
+  const result = await fetchDolarMep();
+  dolarCache = result;
+  dolarCacheTs = ahora;
+  return result.valor;
+}
+
+// Compatibilidad con código existente
+function getDolarMep() {
+  return dolarCache?.valor || parseFloat(process.env.DOLAR_MEP) || 1400;
+}
+
+// Actualizar dólar cada 30 minutos
+cron.schedule('*/30 * * * *', async () => {
+  const result = await fetchDolarMep();
+  dolarCache = result;
+  dolarCacheTs = Date.now();
+  console.log('[DOLAR MEP] Cache actualizado:', result.valor);
+});
+
 // ─────────────────────────────────────────────
 // FACTOR AMBIENTES
-// Refleja el comportamiento real del mercado CABA:
-// unidades más chicas → mayor precio/m² por demanda
-// inversora/alquiler. A mayor cantidad de ambientes,
-// el precio/m² tiende a bajar.
 // ─────────────────────────────────────────────
- 
-/**
- * Devuelve el factor multiplicador de precio/m² según cantidad de ambientes.
- * Incluye ajuste fino por inconsistencia de superficie (mercado CABA).
- *
- * @param {number|null} ambientes - Cantidad de ambientes (1-5+)
- * @param {number} metros - Superficie en m² (para ajuste fino)
- * @returns {{ factor: number, label: string, ajuste_superficie: boolean, impacto_pct: number }}
- */
 function obtenerFactorAmbientes(ambientes, metros = 0) {
-  // Casos inválidos → factor neutro
   if (ambientes === null || ambientes === undefined || ambientes <= 0 || isNaN(ambientes)) {
     return { factor: 1.00, label: 'No especificado', ajuste_superficie: false, impacto_pct: 0 };
   }
- 
+
   const ESCALA = {
     1: { factor: 1.12, label: 'Monoambiente' },
     2: { factor: 1.00, label: '2 ambientes'  },
     3: { factor: 0.94, label: '3 ambientes'  },
     4: { factor: 0.89, label: '4 ambientes'  },
   };
- 
+
   const amb = Math.min(Math.max(Math.round(ambientes), 1), 5);
   const base = amb >= 5
     ? { factor: 0.85, label: '5 o más ambientes' }
     : ESCALA[amb];
- 
+
   let factorFinal = base.factor;
   let ajusteSuperficie = false;
- 
-  // Ajuste fino por inconsistencia de superficie
-  // 3 ambientes muy chico (< 55m²) → unidad "apretada", penalización leve
+
   if (amb === 3 && metros > 0 && metros < 55) {
     factorFinal = parseFloat((factorFinal * 0.98).toFixed(4));
     ajusteSuperficie = true;
   }
-  // 2 ambientes grande (> 55m²) → sobredimensionado, penalización leve
   if (amb === 2 && metros > 55) {
     factorFinal = parseFloat((factorFinal * 0.98).toFixed(4));
     ajusteSuperficie = true;
   }
- 
+
   return {
     factor:            parseFloat(factorFinal.toFixed(4)),
     label:             base.label,
@@ -121,7 +177,7 @@ function obtenerFactorAmbientes(ambientes, metros = 0) {
     impacto_pct:       parseFloat(((factorFinal - 1) * 100).toFixed(1)),
   };
 }
- 
+
 // ─────────────────────────────────────────────
 // FUENTES RSS DE NOTICIAS
 // ─────────────────────────────────────────────
@@ -133,7 +189,7 @@ const RSS_SOURCES = [
   { id: 'lanacion',     nombre: 'La Nación',            url: 'https://www.lanacion.com.ar/arc/outboundfeeds/rss/category/economia/',       max: 4 },
   { id: 'iprofesional', nombre: 'iProfesional',         url: 'https://www.iprofesional.com/rss/home.xml',                                  max: 4 },
 ];
- 
+
 const KEYWORDS_INMOBILIARIO = [
   'inmobili', 'departamento', 'depto', 'alquiler', 'alquileres', 'vivienda', 'propied',
   'hipoteca', 'crédito hipotecario', 'credito hipotecario', 'uva', 'escritura', 'compraventa',
@@ -150,12 +206,12 @@ const KEYWORDS_INMOBILIARIO = [
   'préstamo uva', 'prestamo uva', 'financiamiento',
   'inflaci', 'tasas de interés', 'tasas de interes', 'riesgo país', 'riesgo pais', 'bcra',
 ];
- 
+
 function esRelevante(titulo, descripcion) {
   const texto = (titulo + ' ' + (descripcion || '')).toLowerCase();
   return KEYWORDS_INMOBILIARIO.some(kw => texto.includes(kw.toLowerCase()));
 }
- 
+
 function parsearRSS(xmlStr, source) {
   const items = [];
   const bloques = xmlStr.match(/<item[\s>][\s\S]*?<\/item>|<entry[\s>][\s\S]*?<\/entry>/gi) || [];
@@ -194,7 +250,7 @@ function parsearRSS(xmlStr, source) {
   });
   return items.slice(0, source.max);
 }
- 
+
 async function fetchRSS(source) {
   try {
     const { data } = await axios.get(source.url, {
@@ -210,11 +266,11 @@ async function fetchRSS(source) {
     return [];
   }
 }
- 
+
 let noticiasCache    = null;
 let noticiasCacheTs  = null;
 const CACHE_TTL_MS   = 2 * 60 * 60 * 1000;
- 
+
 async function fetchTodasNoticias() {
   console.log('[RSS] Actualizando noticias desde RSS...');
   const resultados = await Promise.allSettled(RSS_SOURCES.map(fetchRSS));
@@ -228,12 +284,12 @@ async function fetchTodasNoticias() {
   console.log(`[RSS] Total: ${todas.length} noticias cargadas`);
   return todas;
 }
- 
+
 cron.schedule('0 */2 * * *', async () => {
   const noticias = await fetchTodasNoticias();
   if (noticias.length > 0) { noticiasCache = noticias; noticiasCacheTs = Date.now(); }
 });
- 
+
 app.get('/api/noticias', async (req, res) => {
   const cacheValido = noticiasCache && noticiasCacheTs && (Date.now() - noticiasCacheTs < CACHE_TTL_MS);
   if (cacheValido) return res.json({ ok: true, noticias: noticiasCache, desde_cache: true, total: noticiasCache.length });
@@ -249,14 +305,10 @@ app.get('/api/noticias', async (req, res) => {
     res.status(500).json({ ok: false, error: err.message });
   }
 });
- 
+
 // ─────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────
-function getDolarMep() {
-  return parseFloat(process.env.DOLAR_MEP) || 1400;
-}
- 
 async function getMergedData() {
   const cache = await cargarDatos();
   const merged = { ...FALLBACK };
@@ -265,16 +317,34 @@ async function getMergedData() {
       if (merged[key]) merged[key] = { ...merged[key], ...data, alq_ratio: merged[key].alq_ratio };
     }
   }
-  return { data: merged, cache, dolarMep: getDolarMep() };
+  const dolarMep = await getDolarMepActualizado();
+  return { data: merged, cache, dolarMep };
 }
- 
+
+// ─────────────────────────────────────────────
+// ENDPOINT: DÓLAR MEP
+// ─────────────────────────────────────────────
+app.get('/api/dolar', async (req, res) => {
+  try {
+    const valor = await getDolarMepActualizado();
+    res.json({
+      ok: true,
+      mep: valor,
+      fuente: dolarCache?.fuente || 'manual',
+      ultima_actualizacion: dolarCacheTs ? new Date(dolarCacheTs).toISOString() : null,
+    });
+  } catch(err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 // ─────────────────────────────────────────────
 // ESCRITURAS CABA
 // ─────────────────────────────────────────────
 let escriturasCache   = null;
 let escriturasCacheTs = null;
 const ESCRITURAS_TTL  = 24 * 60 * 60 * 1000;
- 
+
 async function fetchEscrituras() {
   try {
     const { data } = await axios.get('https://api.argentinadatos.com/v1/finanzas/escrituras', {
@@ -314,7 +384,7 @@ async function fetchEscrituras() {
     };
   }
 }
- 
+
 app.get('/api/escrituras', async (req, res) => {
   const cacheValido = escriturasCache && escriturasCacheTs && (Date.now() - escriturasCacheTs < ESCRITURAS_TTL);
   if (cacheValido) return res.json({ ...escriturasCache, desde_cache: true });
@@ -322,12 +392,30 @@ app.get('/api/escrituras', async (req, res) => {
   if (result.ok) { escriturasCache = result; escriturasCacheTs = Date.now(); }
   res.json({ ...result, desde_cache: false });
 });
- 
+
 cron.schedule('0 9 * * *', async () => {
   const result = await fetchEscrituras();
   if (result.ok) { escriturasCache = result; escriturasCacheTs = Date.now(); console.log('[ESCRITURAS] Cache actualizado'); }
 });
- 
+
+// ─────────────────────────────────────────────
+// ENDPOINT: ALERTAS DE PRECIO
+// Guarda en memoria (en producción se conectaría a email/DB)
+// ─────────────────────────────────────────────
+const alertasRegistradas = [];
+
+app.post('/api/alerta', (req, res) => {
+  const { email, barrio, precio_objetivo } = req.body;
+  if (!email || !barrio || !precio_objetivo) {
+    return res.status(400).json({ ok: false, error: 'Faltan campos: email, barrio, precio_objetivo' });
+  }
+  const alerta = { email, barrio, precio_objetivo, ts: new Date().toISOString() };
+  alertasRegistradas.push(alerta);
+  console.log('[ALERTA] Nueva alerta registrada:', alerta);
+  // En producción: enviar email de confirmación, guardar en DB, etc.
+  res.json({ ok: true, mensaje: 'Alerta registrada. Te avisaremos cuando el precio baje de tu objetivo.' });
+});
+
 // ─────────────────────────────────────────────
 // ROUTES
 // ─────────────────────────────────────────────
@@ -338,7 +426,7 @@ app.get('/api/barrios', async (req, res) => {
   }));
   res.json({ ok: true, barrios });
 });
- 
+
 const FACTORES_ANTIGUEDAD = {
   '0-5':          { label: 'Nuevo (0-5 años)',          factor: 1.25 },
   '6-15':         { label: 'Moderno (6-15 años)',        factor: 1.12 },
@@ -347,7 +435,7 @@ const FACTORES_ANTIGUEDAD = {
   '50+':          { label: 'Muy antiguo (+50 años)',     factor: 0.78 },
   'refaccionado': { label: 'Refaccionado/reciclado',     factor: 1.08 },
 };
- 
+
 const AMENITIES_CONFIG = {
   pileta:       { label: 'Pileta',              impacto: 0.08, icono: '🏊' },
   gimnasio:     { label: 'Gimnasio',            impacto: 0.05, icono: '🏋️' },
@@ -362,7 +450,7 @@ const AMENITIES_CONFIG = {
   bicicletero:  { label: 'Bicicletero',         impacto: 0.01, icono: '🚲' },
   vista_al_rio: { label: 'Vista al río/parque', impacto: 0.06, icono: '🌊' },
 };
- 
+
 function calcularFactorAmenities(amenitiesKeys) {
   if (!amenitiesKeys || amenitiesKeys.length === 0) return { factor: 1.0, impacto_total: 0, detalle: [] };
   const detalle = [];
@@ -379,7 +467,7 @@ function calcularFactorAmenities(amenitiesKeys) {
   const impactoFinal = Math.min(impactoAcumulado, 0.40);
   return { factor: parseFloat((1 + impactoFinal).toFixed(4)), impacto_total: parseFloat((impactoFinal * 100).toFixed(1)), detalle, cap_aplicado: impactoAcumulado > 0.40 };
 }
- 
+
 app.get('/api/amenities', (req, res) => {
   res.json({
     ok: true,
@@ -387,9 +475,8 @@ app.get('/api/amenities', (req, res) => {
     antiguedad: Object.entries(FACTORES_ANTIGUEDAD).map(([key, v]) => ({ key, ...v })),
   });
 });
- 
+
 // GET /api/cotizar
-// Nuevo parámetro: ambientes (1-5, opcional — si no se pasa, factor neutro)
 app.get('/api/cotizar', async (req, res) => {
   const {
     barrio: barrioKey,
@@ -398,51 +485,48 @@ app.get('/api/cotizar', async (req, res) => {
     op         = 'venta',
     antiguedad = '16-30',
     amenities: amenitiesStr = '',
-    ambientes: ambientesStr = '',   // ← NUEVO
+    ambientes: ambientesStr = '',
   } = req.query;
- 
+
   if (!barrioKey) return res.status(400).json({ ok: false, error: 'Parámetro barrio requerido' });
- 
+
   const metros = parseFloat(metrosStr);
   if (!metros || metros < 10 || metros > 2000)
     return res.status(400).json({ ok: false, error: 'Metros debe ser entre 10 y 2000' });
- 
-  // Parsear ambientes
+
   const ambientesNum = ambientesStr ? parseInt(ambientesStr, 10) : null;
- 
+
   const { data, dolarMep } = await getMergedData();
   const b = data[barrioKey];
   if (!b) return res.status(404).json({ ok: false, error: `Barrio '${barrioKey}' no encontrado` });
- 
+
   const ajustesTipo      = { depto: 1.0, ph: 0.90, estrenar: 1.12, pozo: 0.88 };
   const factorTipo       = ajustesTipo[tipo] ?? 1.0;
   const cfgAntiguedad    = FACTORES_ANTIGUEDAD[antiguedad] || FACTORES_ANTIGUEDAD['16-30'];
   const factorAntiguedad = cfgAntiguedad.factor;
- 
+
   const amenitiesKeys   = amenitiesStr ? amenitiesStr.split(',').map(s => s.trim()).filter(Boolean) : [];
   const amenitiesResult = calcularFactorAmenities(amenitiesKeys);
   const factorAmenities = amenitiesResult.factor;
- 
-  // ← NUEVO: factor ambientes
+
   const ambientesResult = obtenerFactorAmbientes(ambientesNum, metros);
   const factorAmbientes = ambientesResult.factor;
- 
-  // Factor total: tipo × antigüedad × amenities × ambientes
+
   const factorTotal = factorTipo * factorAntiguedad * factorAmenities * factorAmbientes;
   const factorBase  = factorTipo;
- 
+
   const m2      = Math.round(b.m2_mediana * factorTotal);
   const m2_min  = Math.round(b.m2_min    * factorTotal);
   const m2_max  = Math.round(b.m2_max    * factorTotal);
   const m2_base = Math.round(b.m2_mediana * factorBase);
- 
+
   const precioUSD     = Math.round(m2 * metros);
   const precioMinUSD  = Math.round(m2_min * metros);
   const precioMaxUSD  = Math.round(m2_max * metros);
   const precioPesos   = precioUSD * dolarMep;
   const precioBaseUSD = Math.round(m2_base * metros);
   const diferenciaPct = parseFloat(((precioUSD - precioBaseUSD) / precioBaseUSD * 100).toFixed(1));
- 
+
   const ALQ_BASE_CABA_M2_MES = global.ALQ_BASE_CABA_M2_MES_ACTUALIZADO || 16200;
   const PROMEDIO_VENTA_CABA  = 2455;
   const factorZonal   = b.m2_mediana / PROMEDIO_VENTA_CABA;
@@ -456,7 +540,7 @@ app.get('/api/cotizar', async (req, res) => {
   const alqRentabilidad = ((alqMesPesos * 12) / precioPesos * 100).toFixed(1);
   const añosRecupero    = (100 / parseFloat(alqRentabilidad)).toFixed(1);
   const promedioCABA    = 2452;
- 
+
   const cotizacion = {
     barrio:  { key: barrioKey, nombre: b.nombre, region: b.region },
     inputs:  { metros, tipo, op, antiguedad, amenities: amenitiesKeys, ambientes: ambientesNum },
@@ -464,7 +548,6 @@ app.get('/api/cotizar', async (req, res) => {
       factor_tipo:       { valor: factorTipo,       label: tipo,                impacto_pct: parseFloat(((factorTipo - 1) * 100).toFixed(1)) },
       factor_antiguedad: { valor: factorAntiguedad, label: cfgAntiguedad.label, impacto_pct: parseFloat(((factorAntiguedad - 1) * 100).toFixed(1)) },
       factor_amenities:  { valor: factorAmenities,  impacto_pct: amenitiesResult.impacto_total, detalle: amenitiesResult.detalle, cap_aplicado: amenitiesResult.cap_aplicado },
-      // ← NUEVO
       factor_ambientes:  {
         valor:             ambientesResult.factor,
         label:             ambientesResult.label,
@@ -494,10 +577,10 @@ app.get('/api/cotizar', async (req, res) => {
       datos_desde:                b.timestamp || 'ZonaProp-Index-Feb-2026',
     },
   };
- 
+
   res.json({ ok: true, cotizacion });
 });
- 
+
 // GET /api/precios
 app.get('/api/precios', async (req, res) => {
   const { data, cache } = await getMergedData();
@@ -508,10 +591,11 @@ app.get('/api/precios', async (req, res) => {
     barrios: data,
   });
 });
- 
+
 // GET /api/status
 app.get('/api/status', async (req, res) => {
   const status = await getStatus();
+  const dolarMep = getDolarMep();
   res.json({
     ok: true,
     servidor: 'online',
@@ -519,7 +603,12 @@ app.get('/api/status', async (req, res) => {
       existe: true, ultima_actualizacion: status.ultima_actualizacion,
       barrios_cacheados: status.total_barrios, storage: status.storage,
     } : { existe: false, mensaje: 'Usando datos ZonaProp Index Feb 2026', storage: status.storage },
-    dolar_mep: getDolarMep(),
+    dolar_mep: dolarMep,
+    dolar_info: {
+      valor: dolarMep,
+      fuente: dolarCache?.fuente || 'manual',
+      ultima_actualizacion: dolarCacheTs ? new Date(dolarCacheTs).toISOString() : null,
+    },
     noticias: {
       fuentes: RSS_SOURCES.length,
       cache_activo: !!noticiasCache,
@@ -528,11 +617,11 @@ app.get('/api/status', async (req, res) => {
     },
   });
 });
- 
+
 // POST /api/scrape
 let ultimoScrapeManual      = null;
 const MINUTOS_ENTRE_SCRAPES = 120;
- 
+
 app.post('/api/scrape', async (req, res) => {
   const key = req.headers['x-api-key'] || req.body?.api_key;
   if (key !== API_KEY) return res.status(401).json({ ok: false, error: 'Clave incorrecta' });
@@ -545,11 +634,11 @@ app.post('/api/scrape', async (req, res) => {
   res.json({ ok: true, mensaje: 'Scraping iniciado. Los datos se actualizarán en 5-10 minutos.' });
   scrapeAll().catch(err => console.error('[Manual scrape]', err.message));
 });
- 
+
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
- 
+
 // ─────────────────────────────────────────────
 // START
 // ─────────────────────────────────────────────
@@ -558,9 +647,17 @@ initDB().then(async () => {
     console.log(`\n🏠 Cotizador CABA corriendo en http://localhost:${PORT}`);
     console.log(`   API: http://localhost:${PORT}/api/status\n`);
   });
+
+  // Cargar dólar MEP al inicio
+  fetchDolarMep().then(result => {
+    dolarCache = result; dolarCacheTs = Date.now();
+    console.log('[INICIO] Dólar MEP:', result.valor, '('+result.fuente+')');
+  }).catch(err => console.warn('[INICIO] Dólar MEP:', err.message));
+
   fetchTodasNoticias().then(noticias => {
     if (noticias.length) { noticiasCache = noticias; noticiasCacheTs = Date.now(); }
   }).catch(err => console.warn('[INICIO] Noticias RSS:', err.message));
+
   fetchEscrituras().then(result => {
     if (result.ok) { escriturasCache = result; escriturasCacheTs = Date.now(); }
   }).catch(err => console.warn('[INICIO] Escrituras:', err.message));
