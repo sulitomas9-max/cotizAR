@@ -594,42 +594,280 @@ app.post('/api/alerta', async (req, res) => {
 });
 
 // ─────────────────────────────────────────────
-// ENDPOINT: EXPORTAR COTIZACIÓN EN PDF
+// ENDPOINT: EXPORTAR COTIZACIÓN EN PDF (pdfkit — 100% Node.js)
+// npm install pdfkit
 // ─────────────────────────────────────────────
-const { execFile } = require('child_process');
-const os   = require('os');
-const fs   = require('fs');
+const os = require('os');
+const fs = require('fs');
+
+let PDFDocument;
+try { PDFDocument = require('pdfkit'); } catch(e) {
+  console.warn('[PDF] pdfkit no instalado. Corré: npm install pdfkit');
+}
+
+// Paleta fiel a la web
+const PDF_COLORS = {
+  ink:       '#0f0e0c',
+  ink2:      '#4a4840',
+  ink3:      '#9a9790',
+  paper:     '#faf8f4',
+  paper2:    '#f0ede7',
+  paper3:    '#e5e1d8',
+  accent:    '#c8521a',
+  accent2:   '#e8844a',
+  accentBg:  '#fdf0e8',
+  green:     '#1a6640',
+  greenBg:   '#e8f5ee',
+  white:     '#ffffff',
+};
+
+function fmtUSD(n) {
+  if (!n && n !== 0) return '—';
+  return 'USD ' + Math.round(n).toLocaleString('es-AR');
+}
+function fmtARS(n) {
+  if (!n && n !== 0) return '—';
+  return '$ ' + Math.round(n).toLocaleString('es-AR');
+}
+function fmtPct(n) {
+  if (n === null || n === undefined) return '—';
+  return (n > 0 ? '+' : '') + n + '%';
+}
+
+const EDADES_PDF = {
+  '0-5':'Nuevo','6-15':'Moderno','16-30':'Intermedio',
+  '31-50':'Antiguo','50+':'Muy antiguo','refaccionado':'Reciclado'
+};
+const TIPOS_PDF = {
+  depto:'Departamento', ph:'PH', estrenar:'A estrenar', pozo:'En pozo'
+};
+const AMB_PDF = {1:'Monoambiente',2:'2 ambientes',3:'3 ambientes',4:'4 ambientes',5:'5+ ambientes'};
+
+function generarPDFBuffer(cotizacion) {
+  return new Promise((resolve, reject) => {
+    if (!PDFDocument) return reject(new Error('pdfkit no instalado'));
+
+    const doc = new PDFDocument({ size: 'A4', margin: 0, info: {
+      Title: `CotizAR — ${cotizacion?.barrio?.nombre || 'CABA'}`,
+      Author: 'CotizAR', Subject: 'Cotización inmobiliaria CABA',
+    }});
+
+    const chunks = [];
+    doc.on('data', c => chunks.push(c));
+    doc.on('end',  () => resolve(Buffer.concat(chunks)));
+    doc.on('error', reject);
+
+    const W = 595.28, H = 841.89;
+    const ML = 40, MR = 40, MT = 0;
+    const CW = W - ML - MR; // content width
+
+    const v   = cotizacion?.venta;
+    const alq = cotizacion?.alquiler;
+    const aj  = cotizacion?.ajustes || {};
+    const m   = cotizacion?.mercado || {};
+    const inp = cotizacion?.inputs  || {};
+    const bar = cotizacion?.barrio  || {};
+
+    const barrioNombre = bar.nombre || '—';
+    const region       = bar.region || '';
+    const metros       = inp.metros || '—';
+    const tipo         = inp.tipo   || 'depto';
+    const edadLabel    = EDADES_PDF[inp.antiguedad] || inp.antiguedad || '—';
+    const ambLabel     = AMB_PDF[inp.ambientes] || 'No especificado';
+    const amenities    = inp.amenities || [];
+    let y = 0;
+
+    // ── HELPERS ──
+    const rect = (x, ry, w, h, color, radius=0) => {
+      doc.roundedRect(x, ry, w, h, radius).fill(color);
+    };
+    const line = (x1, y1, x2, y2, color='#e5e1d8', lw=0.5) => {
+      doc.moveTo(x1,y1).lineTo(x2,y2).strokeColor(color).lineWidth(lw).stroke();
+    };
+    const txt = (text, x, ty, opts={}) => {
+      const { size=10, color=PDF_COLORS.ink2, bold=false, align='left', width=CW } = opts;
+      doc.font(bold ? 'Helvetica-Bold' : 'Helvetica')
+         .fontSize(size).fillColor(color)
+         .text(String(text), x, ty, { width, align, lineBreak: false });
+    };
+
+    // ── HEADER ──
+    rect(0, 0, W, 52, PDF_COLORS.paper2);
+    rect(0, 0, 6, 52, PDF_COLORS.accent);
+    // Logo
+    doc.font('Helvetica-Bold').fontSize(22).fillColor(PDF_COLORS.ink).text('Cotiz', ML, 15, { continued: true });
+    doc.fillColor(PDF_COLORS.accent).text('AR');
+    doc.font('Helvetica').fontSize(8).fillColor(PDF_COLORS.ink3)
+       .text('Cotizador de departamentos · CABA · cotizar-production.up.railway.app', ML, 40);
+    line(ML, 52, W - MR, 52, PDF_COLORS.paper3, 1);
+    y = 68;
+
+    // ── TÍTULO ──
+    txt(barrioNombre, ML, y, { size:26, color:PDF_COLORS.ink, bold:true });
+    y += 34;
+    txt(`${region}  ·  ${metros} m²  ·  ${TIPOS_PDF[tipo]||tipo}  ·  ${edadLabel}  ·  ${ambLabel}`, ML, y, { size:11, color:PDF_COLORS.ink3 });
+    y += 20;
+    line(ML, y, W - MR, y);
+    y += 14;
+
+    // ── CAJA DE PRECIO ──
+    if (v) {
+      rect(ML, y, CW, 90, PDF_COLORS.paper2, 8);
+      // label
+      doc.font('Helvetica-Bold').fontSize(8).fillColor(PDF_COLORS.ink3)
+         .text('PRECIO ESTIMADO', ML + 16, y + 13);
+      // precio grande
+      doc.font('Helvetica-Bold').fontSize(34).fillColor(PDF_COLORS.ink)
+         .text(fmtUSD(v.precio_usd), ML + 16, y + 25);
+      // rango
+      doc.font('Helvetica').fontSize(9).fillColor(PDF_COLORS.ink2)
+         .text(`Rango: ${fmtUSD(v.precio_usd_min)} — ${fmtUSD(v.precio_usd_max)}`, ML + 16, y + 63);
+      // pesos
+      doc.font('Helvetica').fontSize(9).fillColor(PDF_COLORS.ink3)
+         .text(`${fmtARS(v.precio_pesos)}  ·  MEP $${Math.round(v.dolar_mep||0).toLocaleString('es-AR')}`, ML + 16, y + 76);
+      y += 104;
+    }
+
+    // ── MÉTRICAS (3 columnas) ──
+    const colW3 = (CW - 8) / 3;
+    const metricCols = [
+      { label: 'PRECIO / m²',       value: fmtUSD(v?.m2_usd),              sub: 'con todos los ajustes',         color: PDF_COLORS.ink },
+      { label: 'VS. PROMEDIO CABA', value: fmtPct(m.diferencia_vs_promedio_pct), sub: `mediana ${fmtUSD(m.promedio_caba_m2)}/m²`, color: (m.diferencia_vs_promedio_pct||0) >= 0 ? PDF_COLORS.accent : PDF_COLORS.green },
+      { label: 'AVISOS ANALIZADOS', value: m.muestras_scraping ? String(m.muestras_scraping) : 'ZonaProp', sub: 'fuente del precio base', color: PDF_COLORS.ink2 },
+    ];
+    metricCols.forEach((mc, i) => {
+      const mx = ML + i * (colW3 + 4);
+      rect(mx, y, colW3, 56, PDF_COLORS.white, 6);
+      doc.roundedRect(mx, y, colW3, 56, 6).strokeColor(PDF_COLORS.paper3).lineWidth(0.5).stroke();
+      doc.font('Helvetica-Bold').fontSize(7.5).fillColor(PDF_COLORS.ink3).text(mc.label, mx+10, y+10, {width:colW3-20});
+      doc.font('Helvetica-Bold').fontSize(13).fillColor(mc.color).text(mc.value, mx+10, y+22, {width:colW3-20});
+      doc.font('Helvetica').fontSize(8).fillColor(PDF_COLORS.ink3).text(mc.sub, mx+10, y+40, {width:colW3-20});
+    });
+    y += 70;
+
+    // ── DESGLOSE AJUSTES ──
+    doc.font('Helvetica-Bold').fontSize(8).fillColor(PDF_COLORS.ink3).text('DESGLOSE DE AJUSTES', ML, y);
+    y += 14;
+
+    const adjRows = [
+      ['📍 Precio base',     `${barrioNombre} · mediana`,    fmtUSD(aj.precio_sin_ajustes_usd), PDF_COLORS.ink3],
+      ['🏢 Tipo',            TIPOS_PDF[tipo]||tipo,           fmtPct(aj.factor_tipo?.impacto_pct), null],
+    ];
+    if (aj.factor_ambientes?.ambientes_num) {
+      adjRows.push(['🏠 Ambientes', ambLabel, fmtPct(aj.factor_ambientes?.impacto_pct), null]);
+    }
+    adjRows.push(['🏗️ Antigüedad', edadLabel, fmtPct(aj.factor_antiguedad?.impacto_pct), null]);
+    const amDet = aj.factor_amenities?.detalle || [];
+    const amStr = amDet.length ? amDet.slice(0,3).map(d=>d.label).join(', ') + (amDet.length>3?'…':'') : 'Ninguno';
+    adjRows.push([`✨ Amenities (${amDet.length})`, amStr, fmtPct(aj.factor_amenities?.impacto_pct), null]);
+    // total
+    adjRows.push(['💰 Precio final', '', fmtUSD(v?.precio_usd), PDF_COLORS.accent]);
+
+    const ROW_H = 22;
+    adjRows.forEach((row, i) => {
+      const ry = y + i * ROW_H;
+      const bg = i === adjRows.length - 1 ? PDF_COLORS.accentBg : (i % 2 === 0 ? PDF_COLORS.white : '#faf8f4');
+      rect(ML, ry, CW, ROW_H, bg);
+      const [label, detail, impact, impColor] = row;
+      const isBold = i === adjRows.length - 1;
+      doc.font(isBold?'Helvetica-Bold':'Helvetica').fontSize(9)
+         .fillColor(isBold?PDF_COLORS.ink:PDF_COLORS.ink2)
+         .text(label, ML+8, ry+6, {width:90, lineBreak:false});
+      doc.font('Helvetica').fontSize(9).fillColor(PDF_COLORS.ink3)
+         .text(detail, ML+105, ry+6, {width:CW-195, lineBreak:false});
+      const ic = impColor || ((impact||'').startsWith('+') ? PDF_COLORS.accent : (impact||'').startsWith('-') ? PDF_COLORS.green : PDF_COLORS.ink3);
+      doc.font(isBold?'Helvetica-Bold':'Helvetica').fontSize(9).fillColor(ic)
+         .text(impact||'—', ML, ry+6, {width: CW-4, align:'right', lineBreak:false});
+      line(ML, ry+ROW_H, ML+CW, ry+ROW_H, PDF_COLORS.paper3, 0.4);
+    });
+    doc.roundedRect(ML, y, CW, adjRows.length * ROW_H, 6).strokeColor(PDF_COLORS.paper3).lineWidth(0.5).stroke();
+    y += adjRows.length * ROW_H + 16;
+
+    // ── ALQUILER (si aplica) ──
+    if (alq) {
+      doc.font('Helvetica-Bold').fontSize(8).fillColor(PDF_COLORS.ink3).text('ESTIMACIÓN DE ALQUILER', ML, y);
+      y += 14;
+      rect(ML, y, CW, 58, PDF_COLORS.greenBg, 8);
+      doc.roundedRect(ML, y, CW, 58, 8).strokeColor('#c8e6d4').lineWidth(0.5).stroke();
+      const alqCols = [
+        { label:'ESTIMADO / MES',      value: fmtARS(alq.estimado_mes_pesos) },
+        { label:'RANGO',               value: `${fmtARS(alq.min_pesos)} – ${fmtARS(alq.max_pesos)}` },
+        { label:'RENTABILIDAD ANUAL',  value: `${alq.rentabilidad_bruta_anual}%` },
+        { label:'AÑOS DE RECUPERO',    value: `${alq.años_recupero} años` },
+      ];
+      const alqCW = CW / 4;
+      alqCols.forEach((ac, i) => {
+        const ax = ML + i * alqCW;
+        doc.font('Helvetica-Bold').fontSize(7.5).fillColor(PDF_COLORS.green)
+           .text(ac.label, ax+10, y+12, {width:alqCW-12});
+        doc.font('Helvetica-Bold').fontSize(11).fillColor(PDF_COLORS.green)
+           .text(ac.value, ax+10, y+26, {width:alqCW-12});
+      });
+      y += 72;
+    }
+
+    // ── COMPARATIVA BARRIOS ──
+    doc.font('Helvetica-Bold').fontSize(8).fillColor(PDF_COLORS.ink3).text('COMPARATIVA DE BARRIOS · USD/m²', ML, y);
+    y += 14;
+    const comparativa = [
+      ['Puerto Madero', 6163], ['Palermo', 3362], ['Belgrano', 3100],
+      [barrioNombre, v?.m2_usd || 0],
+      ['Caballito', 2350], ['Flores', 1950], ['Villa Lugano', 1063],
+    ];
+    const seen = new Set();
+    const compClean = [];
+    for (const [n, p] of [...comparativa].sort((a,b) => b[1]-a[1])) {
+      if (!seen.has(n)) { compClean.push([n,p]); seen.add(n); }
+    }
+    const maxP = Math.max(...compClean.map(c=>c[1])) || 1;
+    const BAR_MAX = CW - 155;
+    compClean.forEach(([nombre_b, precio_b]) => {
+      const isHl = nombre_b === barrioNombre;
+      const bw = Math.max(4, Math.round((precio_b / maxP) * BAR_MAX));
+      // nombre
+      doc.font(isHl?'Helvetica-Bold':'Helvetica').fontSize(9)
+         .fillColor(isHl?PDF_COLORS.ink:PDF_COLORS.ink2)
+         .text(nombre_b, ML, y+2, {width:100, align:'right', lineBreak:false});
+      // barra background
+      rect(ML+108, y+4, BAR_MAX, 7, PDF_COLORS.paper3, 2);
+      // barra fill
+      rect(ML+108, y+4, bw, 7, isHl ? PDF_COLORS.accent : PDF_COLORS.paper3, 2);
+      // valor
+      doc.font(isHl?'Helvetica-Bold':'Helvetica').fontSize(9)
+         .fillColor(isHl?PDF_COLORS.accent:PDF_COLORS.ink2)
+         .text(fmtUSD(precio_b)+'/m²', ML+112+BAR_MAX, y+2, {width:80, lineBreak:false});
+      line(ML, y+16, ML+CW, y+16, PDF_COLORS.paper3, 0.3);
+      y += 17;
+    });
+    y += 8;
+
+    // ── FOOTER ──
+    line(ML, H-32, W-MR, H-32, PDF_COLORS.paper3, 0.5);
+    const fecha = new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    doc.font('Helvetica').fontSize(7.5).fillColor(PDF_COLORS.ink3)
+       .text(`Cotización orientativa · Fuente: ZonaProp + Argenprop · Precios de oferta publicada · Generado: ${fecha}`, ML, H-24, {width:CW-60});
+    doc.font('Helvetica').fontSize(7.5).fillColor(PDF_COLORS.ink3)
+       .text('cotizar-production.up.railway.app', ML, H-24, {width:CW, align:'right'});
+
+    doc.end();
+  });
+}
 
 app.post('/api/cotizacion-pdf', async (req, res) => {
   const { cotizacion } = req.body;
   if (!cotizacion) return res.status(400).json({ ok: false, error: 'Falta cotizacion en el body' });
-
-  const tmpOut = path.join(os.tmpdir(), `cotizar_${Date.now()}.pdf`);
-  const jsonStr = JSON.stringify(cotizacion);
-  const scriptPath = path.join(__dirname, 'generar_pdf.py');
-
-  if (!fs.existsSync(scriptPath)) {
-    return res.status(500).json({ ok: false, error: 'generar_pdf.py no encontrado en el directorio raíz' });
-  }
-
-  execFile('python3', [scriptPath, jsonStr, tmpOut], { timeout: 15000 }, (err) => {
-    if (err) {
-      console.error('[PDF]', err.message);
-      return res.status(500).json({ ok: false, error: 'Error generando PDF: ' + err.message });
-    }
-    if (!fs.existsSync(tmpOut)) {
-      return res.status(500).json({ ok: false, error: 'El PDF no fue creado' });
-    }
-    const barrio  = cotizacion?.barrio?.nombre?.replace(/\s+/g,'-') || 'cotizacion';
-    const fecha   = new Date().toISOString().slice(0, 10);
-    const nombre  = `CotizAR_${barrio}_${fecha}.pdf`;
+  try {
+    const buffer = await generarPDFBuffer(cotizacion);
+    const barrio = (cotizacion?.barrio?.nombre || 'cotizacion').replace(/\s+/g, '-');
+    const fecha  = new Date().toISOString().slice(0, 10);
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${nombre}"`);
-    const stream = fs.createReadStream(tmpOut);
-    stream.pipe(res);
-    stream.on('end', () => fs.unlink(tmpOut, () => {}));
-    stream.on('error', () => res.status(500).end());
-  });
+    res.setHeader('Content-Disposition', `attachment; filename="CotizAR_${barrio}_${fecha}.pdf"`);
+    res.setHeader('Content-Length', buffer.length);
+    res.send(buffer);
+  } catch(err) {
+    console.error('[PDF]', err.message);
+    res.status(500).json({ ok: false, error: 'Error generando PDF: ' + err.message });
+  }
 });
 
 
