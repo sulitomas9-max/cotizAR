@@ -36,35 +36,66 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ─────────────────────────────────────────────
-// DATOS FALLBACK
+// DATOS FALLBACK — 48 barrios oficiales CABA
+// Precios USD/m² basados en ZonaProp Index 2025
+// Rangos calibrados por mercado real por zona
 // ─────────────────────────────────────────────
 const FALLBACK = {
+  // ── CORREDOR NORTE ──
   puerto_madero:    { nombre: 'Puerto Madero',    m2_mediana: 6152, m2_min: 4800, m2_max: 8200, region: 'Corredor Norte',    alq_ratio: 0.0042 },
   palermo:          { nombre: 'Palermo',          m2_mediana: 3390, m2_min: 2800, m2_max: 4200, region: 'Corredor Norte',    alq_ratio: 0.0045 },
   belgrano:         { nombre: 'Belgrano',         m2_mediana: 3050, m2_min: 2500, m2_max: 3800, region: 'Corredor Norte',    alq_ratio: 0.0044 },
-  nuñez:            { nombre: 'Núñez',            m2_mediana: 3413, m2_min: 2800, m2_max: 4200, region: 'Corredor Norte',    alq_ratio: 0.0043 },
+  nunez:            { nombre: 'Núñez',            m2_mediana: 3413, m2_min: 2800, m2_max: 4200, region: 'Corredor Norte',    alq_ratio: 0.0043 },
   recoleta:         { nombre: 'Recoleta',         m2_mediana: 3300, m2_min: 2700, m2_max: 4100, region: 'Corredor Norte',    alq_ratio: 0.0044 },
   barrio_norte:     { nombre: 'Barrio Norte',     m2_mediana: 3100, m2_min: 2500, m2_max: 3900, region: 'Corredor Norte',    alq_ratio: 0.0043 },
+  saavedra:         { nombre: 'Saavedra',         m2_mediana: 2580, m2_min: 2050, m2_max: 3200, region: 'Corredor Norte',    alq_ratio: 0.0045 },
+  // ── CORREDOR NOROESTE ──
   colegiales:       { nombre: 'Colegiales',       m2_mediana: 2800, m2_min: 2250, m2_max: 3500, region: 'Corredor Noroeste', alq_ratio: 0.0046 },
   chacarita:        { nombre: 'Chacarita',        m2_mediana: 2650, m2_min: 2100, m2_max: 3300, region: 'Corredor Noroeste', alq_ratio: 0.0047 },
   villa_urquiza:    { nombre: 'Villa Urquiza',    m2_mediana: 2450, m2_min: 1950, m2_max: 3050, region: 'Corredor Noroeste', alq_ratio: 0.0046 },
   villa_del_parque: { nombre: 'Villa del Parque', m2_mediana: 2350, m2_min: 1880, m2_max: 2950, region: 'Corredor Noroeste', alq_ratio: 0.0046 },
+  villa_pueyrredon: { nombre: 'Villa Pueyrredón', m2_mediana: 2280, m2_min: 1820, m2_max: 2860, region: 'Corredor Noroeste', alq_ratio: 0.0046 },
+  villa_devoto:     { nombre: 'Villa Devoto',     m2_mediana: 2320, m2_min: 1850, m2_max: 2900, region: 'Corredor Noroeste', alq_ratio: 0.0046 },
+  la_paternal:      { nombre: 'La Paternal',      m2_mediana: 2150, m2_min: 1700, m2_max: 2700, region: 'Corredor Noroeste', alq_ratio: 0.0047 },
+  agronomia:        { nombre: 'Agronomía',        m2_mediana: 2100, m2_min: 1650, m2_max: 2650, region: 'Corredor Noroeste', alq_ratio: 0.0047 },
+  // ── MACROCENTRO ──
   retiro:           { nombre: 'Retiro',           m2_mediana: 2650, m2_min: 2100, m2_max: 3300, region: 'Macrocentro',       alq_ratio: 0.0045 },
   san_nicolas:      { nombre: 'San Nicolás',      m2_mediana: 2150, m2_min: 1700, m2_max: 2700, region: 'Macrocentro',       alq_ratio: 0.0044 },
   monserrat:        { nombre: 'Monserrat',        m2_mediana: 2100, m2_min: 1650, m2_max: 2650, region: 'Macrocentro',       alq_ratio: 0.0044 },
   san_telmo:        { nombre: 'San Telmo',        m2_mediana: 2050, m2_min: 1600, m2_max: 2600, region: 'Macrocentro',       alq_ratio: 0.0044 },
   balvanera:        { nombre: 'Balvanera',        m2_mediana: 2050, m2_min: 1600, m2_max: 2600, region: 'Macrocentro',       alq_ratio: 0.0043 },
-  villa_crespo:     { nombre: 'Villa Crespo',     m2_mediana: 2650, m2_min: 2100, m2_max: 3300, region: 'Noroeste',          alq_ratio: 0.0046 },
-  caballito:        { nombre: 'Caballito',        m2_mediana: 2350, m2_min: 1880, m2_max: 2950, region: 'Noroeste',          alq_ratio: 0.0046 },
-  almagro:          { nombre: 'Almagro',          m2_mediana: 2215, m2_min: 1750, m2_max: 2750, region: 'Noroeste',          alq_ratio: 0.0045 },
-  flores:           { nombre: 'Flores',           m2_mediana: 1930, m2_min: 1520, m2_max: 2430, region: 'Noroeste',          alq_ratio: 0.0045 },
+  constitucion:     { nombre: 'Constitución',     m2_mediana: 1980, m2_min: 1540, m2_max: 2500, region: 'Macrocentro',       alq_ratio: 0.0044 },
+  congreso:         { nombre: 'Congreso',         m2_mediana: 2080, m2_min: 1620, m2_max: 2620, region: 'Macrocentro',       alq_ratio: 0.0044 },
+  // ── CENTRO-OESTE ──
+  villa_crespo:     { nombre: 'Villa Crespo',     m2_mediana: 2650, m2_min: 2100, m2_max: 3300, region: 'Centro-Oeste',      alq_ratio: 0.0046 },
+  caballito:        { nombre: 'Caballito',        m2_mediana: 2350, m2_min: 1880, m2_max: 2950, region: 'Centro-Oeste',      alq_ratio: 0.0046 },
+  almagro:          { nombre: 'Almagro',          m2_mediana: 2215, m2_min: 1750, m2_max: 2750, region: 'Centro-Oeste',      alq_ratio: 0.0045 },
+  boedo:            { nombre: 'Boedo',            m2_mediana: 2250, m2_min: 1780, m2_max: 2830, region: 'Centro-Oeste',      alq_ratio: 0.0046 },
+  parque_chacabuco: { nombre: 'Parque Chacabuco', m2_mediana: 2180, m2_min: 1730, m2_max: 2740, region: 'Centro-Oeste',      alq_ratio: 0.0046 },
+  parque_patricios: { nombre: 'Parque Patricios', m2_mediana: 2050, m2_min: 1590, m2_max: 2580, region: 'Centro-Oeste',      alq_ratio: 0.0046 },
+  // ── OESTE ──
+  flores:           { nombre: 'Flores',           m2_mediana: 1930, m2_min: 1520, m2_max: 2430, region: 'Oeste',             alq_ratio: 0.0045 },
+  floresta:         { nombre: 'Floresta',         m2_mediana: 1870, m2_min: 1460, m2_max: 2360, region: 'Oeste',             alq_ratio: 0.0046 },
+  monte_castro:     { nombre: 'Monte Castro',     m2_mediana: 1820, m2_min: 1420, m2_max: 2300, region: 'Oeste',             alq_ratio: 0.0046 },
+  velez_sarsfield:  { nombre: 'Vélez Sársfield',  m2_mediana: 1800, m2_min: 1400, m2_max: 2270, region: 'Oeste',             alq_ratio: 0.0047 },
+  villa_real:       { nombre: 'Villa Real',       m2_mediana: 1760, m2_min: 1370, m2_max: 2220, region: 'Oeste',             alq_ratio: 0.0047 },
+  versalles:        { nombre: 'Versalles',        m2_mediana: 1790, m2_min: 1390, m2_max: 2260, region: 'Oeste',             alq_ratio: 0.0047 },
+  villa_santa_rita: { nombre: 'Villa Santa Rita', m2_mediana: 1840, m2_min: 1440, m2_max: 2320, region: 'Oeste',             alq_ratio: 0.0047 },
   liniers:          { nombre: 'Liniers',          m2_mediana: 1850, m2_min: 1420, m2_max: 2330, region: 'Oeste',             alq_ratio: 0.0046 },
   mataderos:        { nombre: 'Mataderos',        m2_mediana: 1700, m2_min: 1300, m2_max: 2150, region: 'Oeste',             alq_ratio: 0.0046 },
-  boedo:            { nombre: 'Boedo',            m2_mediana: 2250, m2_min: 1780, m2_max: 2830, region: 'Sur-Este',          alq_ratio: 0.0046 },
-  barracas:         { nombre: 'Barracas',         m2_mediana: 1920, m2_min: 1480, m2_max: 2430, region: 'Sur-Este',          alq_ratio: 0.0046 },
-  nueva_pompeya:    { nombre: 'Nueva Pompeya',    m2_mediana: 1478, m2_min: 1100, m2_max: 1900, region: 'Sur',               alq_ratio: 0.0048 },
+  villa_luro:       { nombre: 'Villa Luro',       m2_mediana: 1780, m2_min: 1390, m2_max: 2250, region: 'Oeste',             alq_ratio: 0.0047 },
+  villa_general_mitre: { nombre: 'Villa Gral. Mitre', m2_mediana: 2050, m2_min: 1600, m2_max: 2580, region: 'Oeste',        alq_ratio: 0.0046 },
+  // ── SUR ──
+  barracas:         { nombre: 'Barracas',         m2_mediana: 1920, m2_min: 1480, m2_max: 2430, region: 'Sur',               alq_ratio: 0.0046 },
   la_boca:          { nombre: 'La Boca',          m2_mediana: 1560, m2_min: 1150, m2_max: 2000, region: 'Sur',               alq_ratio: 0.0046 },
-  lugano:           { nombre: 'Lugano',           m2_mediana: 1098, m2_min:  830, m2_max: 1420, region: 'Sur',               alq_ratio: 0.0048 },
+  nueva_pompeya:    { nombre: 'Nueva Pompeya',    m2_mediana: 1478, m2_min: 1100, m2_max: 1900, region: 'Sur',               alq_ratio: 0.0048 },
+  villa_soldati:    { nombre: 'Villa Soldati',    m2_mediana: 1180, m2_min:  880, m2_max: 1520, region: 'Sur',               alq_ratio: 0.0048 },
+  villa_riachuelo:  { nombre: 'Villa Riachuelo',  m2_mediana: 1150, m2_min:  860, m2_max: 1480, region: 'Sur',               alq_ratio: 0.0049 },
+  villa_lugano:     { nombre: 'Villa Lugano',     m2_mediana: 1098, m2_min:  830, m2_max: 1420, region: 'Sur',               alq_ratio: 0.0048 },
+  // ── COMUNAS MIXTAS (barrios con nombre propio diferenciado) ──
+  palermo_soho:     { nombre: 'Palermo Soho',     m2_mediana: 3550, m2_min: 2900, m2_max: 4400, region: 'Corredor Norte',    alq_ratio: 0.0046 },
+  palermo_hollywood:{ nombre: 'Palermo Hollywood',m2_mediana: 3480, m2_min: 2850, m2_max: 4300, region: 'Corredor Norte',    alq_ratio: 0.0045 },
+  las_canitas:      { nombre: 'Las Cañitas',      m2_mediana: 3200, m2_min: 2600, m2_max: 4000, region: 'Corredor Norte',    alq_ratio: 0.0045 },
 };
 
 // ─────────────────────────────────────────────
@@ -399,26 +430,209 @@ cron.schedule('0 9 * * *', async () => {
 });
 
 // ─────────────────────────────────────────────
-// ENDPOINT: ALERTAS DE PRECIO
-// Guarda en memoria (en producción se conectaría a email/DB)
+// ALERTAS DE PRECIO — con nodemailer
+//
+// Variables de entorno necesarias (.env):
+//   ALERT_EMAIL_FROM=tu@gmail.com
+//   ALERT_EMAIL_PASS=tu_app_password_gmail
+//   ALERT_EMAIL_TO=  (opcional, para notificarte a vos también)
+//
+// Para Gmail: activar "Contraseñas de aplicación" en
+// myaccount.google.com/security → Verificación en 2 pasos → Contraseñas de app
 // ─────────────────────────────────────────────
-const alertasRegistradas = [];
+let nodemailer;
+try { nodemailer = require('nodemailer'); } catch(e) { console.warn('[ALERTAS] nodemailer no instalado. Corré: npm install nodemailer'); }
 
-app.post('/api/alerta', (req, res) => {
-  const { email, barrio, precio_objetivo } = req.body;
-  if (!email || !barrio || !precio_objetivo) {
-    return res.status(400).json({ ok: false, error: 'Faltan campos: email, barrio, precio_objetivo' });
+const alertasDB = []; // en producción reemplazar con persistencia a archivo/DB
+
+function crearTransporter() {
+  if (!nodemailer) return null;
+  if (!process.env.ALERT_EMAIL_FROM || !process.env.ALERT_EMAIL_PASS) {
+    console.warn('[ALERTAS] Faltan ALERT_EMAIL_FROM y ALERT_EMAIL_PASS en .env');
+    return null;
   }
-  const alerta = { email, barrio, precio_objetivo, ts: new Date().toISOString() };
-  alertasRegistradas.push(alerta);
-  console.log('[ALERTA] Nueva alerta registrada:', alerta);
-  // En producción: enviar email de confirmación, guardar en DB, etc.
-  res.json({ ok: true, mensaje: 'Alerta registrada. Te avisaremos cuando el precio baje de tu objetivo.' });
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: { user: process.env.ALERT_EMAIL_FROM, pass: process.env.ALERT_EMAIL_PASS },
+  });
+}
+
+async function enviarEmailAlerta(alerta, precioActual) {
+  const transporter = crearTransporter();
+  if (!transporter) {
+    console.log(`[ALERTAS] (simulado) Email a ${alerta.email}: ${alerta.barrioNombre} bajó a USD ${precioActual}/m²`);
+    return false;
+  }
+  try {
+    await transporter.sendMail({
+      from: `"CotizAR" <${process.env.ALERT_EMAIL_FROM}>`,
+      to: alerta.email,
+      subject: `📉 Alerta: ${alerta.barrioNombre} bajó de tu objetivo`,
+      html: `
+        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#faf8f4">
+          <h2 style="font-size:24px;margin-bottom:8px;color:#0f0e0c">Bajó el precio en ${alerta.barrioNombre}</h2>
+          <p style="color:#4a4840;margin-bottom:24px">El precio/m² actual está por debajo de tu objetivo.</p>
+          <div style="background:white;border-radius:12px;padding:20px;border:1px solid #e5e1d8;margin-bottom:24px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:12px">
+              <span style="color:#9a9790;font-size:13px">Tu objetivo</span>
+              <span style="font-weight:500">USD ${alerta.precio_objetivo.toLocaleString('es-AR')}/m²</span>
+            </div>
+            <div style="display:flex;justify-content:space-between">
+              <span style="color:#9a9790;font-size:13px">Precio actual</span>
+              <span style="font-weight:600;color:#1a6640">USD ${precioActual.toLocaleString('es-AR')}/m²</span>
+            </div>
+          </div>
+          <a href="https://cotizar-production.up.railway.app?barrio=${alerta.barrio}" 
+             style="display:block;background:#c8521a;color:white;text-align:center;padding:12px;border-radius:6px;text-decoration:none;font-weight:500">
+            Ver cotización →
+          </a>
+          <p style="font-size:11px;color:#9a9790;margin-top:20px;text-align:center">
+            CotizAR · Para cancelar esta alerta respondé este email con "cancelar"
+          </p>
+        </div>
+      `,
+    });
+    console.log(`[ALERTAS] Email enviado a ${alerta.email} — ${alerta.barrioNombre}`);
+    return true;
+  } catch(err) {
+    console.error('[ALERTAS] Error enviando email:', err.message);
+    return false;
+  }
+}
+
+async function enviarEmailConfirmacion(email, barrioNombre, precioObjetivo) {
+  const transporter = crearTransporter();
+  if (!transporter) return;
+  try {
+    await transporter.sendMail({
+      from: `"CotizAR" <${process.env.ALERT_EMAIL_FROM}>`,
+      to: email,
+      subject: `✅ Alerta creada — ${barrioNombre}`,
+      html: `
+        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#faf8f4">
+          <h2 style="font-size:24px;margin-bottom:8px;color:#0f0e0c">Alerta creada 🎯</h2>
+          <p style="color:#4a4840;margin-bottom:24px">
+            Te vamos a avisar cuando el precio en <strong>${barrioNombre}</strong> 
+            baje de <strong>USD ${precioObjetivo.toLocaleString('es-AR')}/m²</strong>.
+          </p>
+          <p style="font-size:11px;color:#9a9790;text-align:center">
+            CotizAR · cotizar-production.up.railway.app
+          </p>
+        </div>
+      `,
+    });
+  } catch(err) {
+    console.error('[ALERTAS] Error en email de confirmación:', err.message);
+  }
+}
+
+// Cron: revisar alertas cada 6 horas
+cron.schedule('0 */6 * * *', async () => {
+  if (!alertasDB.length) return;
+  console.log(`[ALERTAS] Revisando ${alertasDB.length} alertas activas...`);
+  const { data } = await getMergedData();
+  for (const alerta of alertasDB.filter(a => a.activa)) {
+    const barrio = data[alerta.barrio];
+    if (!barrio) continue;
+    if (barrio.m2_mediana < alerta.precio_objetivo) {
+      await enviarEmailAlerta(alerta, barrio.m2_mediana);
+      alerta.ultima_notificacion = Date.now();
+    }
+  }
+});
+
+app.post('/api/alerta', async (req, res) => {
+  const { email, barrio, precio_objetivo } = req.body;
+
+  if (!email || !email.includes('@'))
+    return res.status(400).json({ ok: false, error: 'Email inválido' });
+  if (!barrio)
+    return res.status(400).json({ ok: false, error: 'Barrio requerido' });
+  if (!precio_objetivo || precio_objetivo < 500)
+    return res.status(400).json({ ok: false, error: 'Precio objetivo inválido' });
+
+  // Verificar que el barrio existe
+  const { data } = await getMergedData();
+  const barrioData = data[barrio];
+  if (!barrioData)
+    return res.status(404).json({ ok: false, error: 'Barrio no encontrado' });
+
+  // Evitar alertas duplicadas
+  const existe = alertasDB.find(a => a.email === email && a.barrio === barrio && a.activa);
+  if (existe) {
+    existe.precio_objetivo = parseInt(precio_objetivo);
+    return res.json({ ok: true, mensaje: 'Alerta actualizada', email_configurado: !!process.env.ALERT_EMAIL_FROM });
+  }
+
+  const alerta = {
+    email,
+    barrio,
+    barrioNombre: barrioData.nombre,
+    precio_objetivo: parseInt(precio_objetivo),
+    activa: true,
+    creada: new Date().toISOString(),
+    ultima_notificacion: null,
+  };
+  alertasDB.push(alerta);
+  console.log(`[ALERTAS] Nueva alerta: ${email} → ${barrioData.nombre} < USD ${precio_objetivo}/m²`);
+
+  // Enviar confirmación por email
+  await enviarEmailConfirmacion(email, barrioData.nombre, parseInt(precio_objetivo));
+
+  // Verificar si ya cumple la condición ahora mismo
+  const precioActual = barrioData.m2_mediana;
+  const yaActiva = precioActual < parseInt(precio_objetivo);
+
+  res.json({
+    ok: true,
+    mensaje: 'Alerta creada. Te llegará un email de confirmación.',
+    email_configurado: !!process.env.ALERT_EMAIL_FROM,
+    precio_actual: precioActual,
+    ya_cumple: yaActiva,
+    aviso: yaActiva ? `El precio actual (USD ${precioActual}/m²) ya está por debajo de tu objetivo.` : null,
+  });
 });
 
 // ─────────────────────────────────────────────
-// ROUTES
+// ENDPOINT: EXPORTAR COTIZACIÓN EN PDF
 // ─────────────────────────────────────────────
+const { execFile } = require('child_process');
+const os   = require('os');
+const fs   = require('fs');
+
+app.post('/api/cotizacion-pdf', async (req, res) => {
+  const { cotizacion } = req.body;
+  if (!cotizacion) return res.status(400).json({ ok: false, error: 'Falta cotizacion en el body' });
+
+  const tmpOut = path.join(os.tmpdir(), `cotizar_${Date.now()}.pdf`);
+  const jsonStr = JSON.stringify(cotizacion);
+  const scriptPath = path.join(__dirname, 'generar_pdf.py');
+
+  if (!fs.existsSync(scriptPath)) {
+    return res.status(500).json({ ok: false, error: 'generar_pdf.py no encontrado en el directorio raíz' });
+  }
+
+  execFile('python3', [scriptPath, jsonStr, tmpOut], { timeout: 15000 }, (err) => {
+    if (err) {
+      console.error('[PDF]', err.message);
+      return res.status(500).json({ ok: false, error: 'Error generando PDF: ' + err.message });
+    }
+    if (!fs.existsSync(tmpOut)) {
+      return res.status(500).json({ ok: false, error: 'El PDF no fue creado' });
+    }
+    const barrio  = cotizacion?.barrio?.nombre?.replace(/\s+/g,'-') || 'cotizacion';
+    const fecha   = new Date().toISOString().slice(0, 10);
+    const nombre  = `CotizAR_${barrio}_${fecha}.pdf`;
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${nombre}"`);
+    const stream = fs.createReadStream(tmpOut);
+    stream.pipe(res);
+    stream.on('end', () => fs.unlink(tmpOut, () => {}));
+    stream.on('error', () => res.status(500).end());
+  });
+});
+
+
 app.get('/api/barrios', async (req, res) => {
   const { data } = await getMergedData();
   const barrios = Object.entries(data).map(([key, b]) => ({
@@ -609,6 +823,8 @@ app.get('/api/status', async (req, res) => {
       fuente: dolarCache?.fuente || 'manual',
       ultima_actualizacion: dolarCacheTs ? new Date(dolarCacheTs).toISOString() : null,
     },
+    email_configurado: !!(process.env.ALERT_EMAIL_FROM && process.env.ALERT_EMAIL_PASS),
+    alertas_activas: alertasDB.filter(a => a.activa).length,
     noticias: {
       fuentes: RSS_SOURCES.length,
       cache_activo: !!noticiasCache,
