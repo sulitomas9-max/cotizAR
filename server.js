@@ -845,7 +845,7 @@ function generarPDFBuffer(cotizacion) {
     line(ML, H-32, W-MR, H-32, PDF_COLORS.paper3, 0.5);
     const fecha = new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
     doc.font('Helvetica').fontSize(7.5).fillColor(PDF_COLORS.ink3)
-       .text(`Cotización orientativa · Fuente: ZonaProp + Argenprop · Precios de oferta publicada · Generado: ${fecha}`, ML, H-24, {width:CW-60});
+       .text(`Cotización orientativa · Fuente: MercadoLibre Inmuebles · Datos actualizados diariamente · Generado: ${fecha}`, ML, H-24, {width:CW-60});
     doc.font('Helvetica').fontSize(7.5).fillColor(PDF_COLORS.ink3)
        .text('cotizar-production.up.railway.app', ML, H-24, {width:CW, align:'right'});
 
