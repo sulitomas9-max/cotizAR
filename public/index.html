@@ -554,7 +554,12 @@
 <section class="alerta-wrapper">
   <div class="alerta-card">
     <div class="alerta-title">Alertas de precio</div>
-    <div class="alerta-sub">Recibí un aviso cuando el precio en un barrio baje de tu objetivo</div>
+    <div class="alerta-sub">Recibí un email cuando el precio en un barrio baje de tu objetivo</div>
+    <div id="alerta-config-aviso" style="display:none;margin-bottom:16px;padding:10px 14px;background:var(--blue-light);border-radius:var(--radius-sm);font-size:12px;color:var(--blue);line-height:1.6">
+      <strong>📧 Emails desactivados</strong> — Para recibirlos, agregá en tu <code>.env</code>:<br>
+      <code>ALERT_EMAIL_FROM=tu@gmail.com</code><br>
+      <code>ALERT_EMAIL_PASS=tu_app_password</code>
+    </div>
     <div class="alerta-form" id="alerta-form">
       <div class="field alerta-full">
         <label>Email</label>
@@ -1177,59 +1182,39 @@ function renderResults(c) {
   }, 50);
 }
 
-// ── EXPORTAR PDF ──
-function exportarPDF() {
+// ── EXPORTAR PDF (server-side con reportlab) ──
+async function exportarPDF() {
   if (!ultimaCotizacion) return;
-  const c = ultimaCotizacion;
-  const v = c.venta;
-  const alq = c.alquiler;
-  const fecha = new Date().toLocaleDateString('es-AR', {day:'2-digit',month:'2-digit',year:'numeric'});
+  const btn = document.querySelector('.action-btn .ab-ico');
+  const allBtns = document.querySelectorAll('.action-btn');
+  let pdfBtn;
+  allBtns.forEach(b => { if (b.textContent.includes('Exportar')) pdfBtn = b; });
+  if (pdfBtn) { pdfBtn.style.opacity = '0.5'; pdfBtn.style.pointerEvents = 'none'; }
 
-  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
-  <style>
-    body{font-family:Georgia,serif;max-width:700px;margin:0 auto;padding:40px;color:#0f0e0c}
-    h1{font-size:28px;margin-bottom:4px} .sub{color:#9a9790;font-size:13px;margin-bottom:32px}
-    .price{font-size:42px;font-weight:bold;color:#c8521a;margin:24px 0 8px}
-    .range{font-size:14px;color:#4a4840;margin-bottom:24px}
-    table{width:100%;border-collapse:collapse;margin-bottom:24px}
-    td,th{padding:10px 12px;border-bottom:1px solid #e5e1d8;font-size:13px;text-align:left}
-    th{background:#faf8f4;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#9a9790}
-    .footer{margin-top:40px;font-size:11px;color:#9a9790;border-top:1px solid #e5e1d8;padding-top:16px}
-    @media print{body{padding:20px}}
-  </style></head><body>
-  <h1>CotizAR — Cotización Inmobiliaria</h1>
-  <div class="sub">Generado el ${fecha} · CABA, Argentina</div>
-  ${v ? `<div class="price">${usd(v.precio_usd)}</div><div class="range">Rango: ${usd(v.precio_usd_min)} — ${usd(v.precio_usd_max)}</div>` : ''}
-  <table>
-    <tr><th colspan="2">Datos del inmueble</th></tr>
-    <tr><td>Barrio</td><td>${c.barrio.nombre} (${c.barrio.region})</td></tr>
-    <tr><td>Superficie</td><td>${c.inputs.metros} m²</td></tr>
-    <tr><td>Tipo</td><td>${c.inputs.tipo}</td></tr>
-    <tr><td>Antigüedad</td><td>${EDAD.find(e=>e.key===c.inputs.antiguedad)?.label||''}</td></tr>
-    <tr><td>Ambientes</td><td>${c.inputs.ambientes || 'No especificado'}</td></tr>
-    <tr><td>Amenities</td><td>${c.inputs.amenities?.length ? c.inputs.amenities.join(', ') : 'Ninguno'}</td></tr>
-  </table>
-  ${v ? `<table>
-    <tr><th colspan="2">Precios</th></tr>
-    <tr><td>Precio estimado</td><td>${usd(v.precio_usd)}</td></tr>
-    <tr><td>En pesos</td><td>${ars(v.precio_pesos)}</td></tr>
-    <tr><td>Precio/m²</td><td>${usd(v.m2_usd)}/m²</td></tr>
-    <tr><td>Dólar MEP usado</td><td>$${v.dolar_mep?.toLocaleString('es-AR')}</td></tr>
-  </table>` : ''}
-  ${alq ? `<table>
-    <tr><th colspan="2">Alquiler estimado</th></tr>
-    <tr><td>Mensual</td><td>${ars(alq.estimado_mes_pesos)}</td></tr>
-    <tr><td>Rango</td><td>${ars(alq.min_pesos)} – ${ars(alq.max_pesos)}</td></tr>
-    <tr><td>Rentabilidad bruta anual</td><td>${alq.rentabilidad_bruta_anual}%</td></tr>
-    <tr><td>Años de recupero</td><td>${alq.años_recupero} años</td></tr>
-  </table>` : ''}
-  <div class="footer">Cotización orientativa · Fuente: ZonaProp + Argenprop scrapeados diariamente · cotizar-production.up.railway.app</div>
-  </body></html>`;
-
-  const win = window.open('', '_blank');
-  win.document.write(html);
-  win.document.close();
-  setTimeout(() => win.print(), 500);
+  try {
+    const resp = await fetch('/api/cotizacion-pdf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cotizacion: ultimaCotizacion }),
+    });
+    if (!resp.ok) throw new Error('Error en el servidor');
+    const blob = await resp.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    const barrio = ultimaCotizacion?.barrio?.nombre?.replace(/\s+/g,'-') || 'cotizacion';
+    const fecha  = new Date().toISOString().slice(0,10);
+    a.href     = url;
+    a.download = `CotizAR_${barrio}_${fecha}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('📄 PDF descargado');
+  } catch(e) {
+    showToast('⚠️ Error generando PDF: ' + e.message);
+  } finally {
+    if (pdfBtn) { pdfBtn.style.opacity = ''; pdfBtn.style.pointerEvents = ''; }
+  }
 }
 
 // ── NOTICIAS ──
@@ -1376,22 +1361,58 @@ function guardarAlerta() {
   if (!barrio) { showToast('⚠️ Seleccioná un barrio'); return; }
   if (!precio || precio < 100) { showToast('⚠️ Ingresá un precio objetivo'); return; }
 
+  const btn = document.querySelector('.alerta-btn');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+
+  // Guardar en localStorage (para mostrar en UI)
   const alertas = JSON.parse(localStorage.getItem('cotizar_alertas') || '[]');
   const barrioNombre = barriosData.find(b => b.key === barrio)?.nombre || barrio;
-  alertas.push({ email, barrio, barrioNombre, precio: parseInt(precio), ts: Date.now() });
+  const existe = alertas.findIndex(a => a.email === email && a.barrio === barrio);
+  const entrada = { email, barrio, barrioNombre, precio: parseInt(precio), ts: Date.now() };
+  if (existe >= 0) alertas[existe] = entrada; else alertas.push(entrada);
   localStorage.setItem('cotizar_alertas', JSON.stringify(alertas));
 
-  document.getElementById('alerta-form').style.display = 'none';
-  document.getElementById('alerta-success').style.display = 'block';
-  setTimeout(() => {
-    document.getElementById('alerta-form').style.display = 'grid';
-    document.getElementById('alerta-success').style.display = 'none';
-    document.getElementById('alerta-email').value = '';
-    document.getElementById('alerta-barrio').value = '';
-    document.getElementById('alerta-precio').value = '';
-  }, 4000);
+  // Enviar al servidor (con nodemailer si está configurado)
+  fetch('/api/alerta', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, barrio, precio_objetivo: parseInt(precio) }),
+  })
+  .then(r => r.json())
+  .then(d => {
+    btn.disabled = false; btn.textContent = 'Crear alerta';
+    if (!d.ok) { showToast('⚠️ ' + d.error); return; }
 
-  renderAlertasGuardadas();
+    document.getElementById('alerta-form').style.display = 'none';
+    const successEl = document.getElementById('alerta-success');
+    successEl.style.display = 'block';
+
+    if (d.email_configurado) {
+      successEl.innerHTML = `✅ Alerta creada. Te enviamos un email de confirmación a <strong>${email}</strong>.${d.ya_cumple ? '<br><span style="color:var(--green)">⚡ El precio actual ya está por debajo de tu objetivo!</span>' : ''}`;
+    } else {
+      successEl.innerHTML = `✅ Alerta guardada localmente.<br><small style="color:var(--ink3)">Para recibir emails configura ALERT_EMAIL_FROM en el servidor.</small>`;
+    }
+
+    setTimeout(() => {
+      document.getElementById('alerta-form').style.display = 'grid';
+      successEl.style.display = 'none';
+      document.getElementById('alerta-email').value = '';
+      document.getElementById('alerta-barrio').value = '';
+      document.getElementById('alerta-precio').value = '';
+    }, 5000);
+    renderAlertasGuardadas();
+  })
+  .catch(() => {
+    btn.disabled = false; btn.textContent = 'Crear alerta';
+    // Fallback: solo localStorage
+    document.getElementById('alerta-form').style.display = 'none';
+    document.getElementById('alerta-success').style.display = 'block';
+    setTimeout(() => {
+      document.getElementById('alerta-form').style.display = 'grid';
+      document.getElementById('alerta-success').style.display = 'none';
+    }, 3000);
+    renderAlertasGuardadas();
+  });
 }
 
 function renderAlertasGuardadas() {
@@ -1413,6 +1434,15 @@ function borrarAlerta(i) {
   showToast('Alerta eliminada');
 }
 
+// ── VERIFICAR CONFIG EMAIL ──
+async function verificarConfigEmail() {
+  try {
+    const d = await fetch('/api/status').then(r => r.json());
+    const aviso = document.getElementById('alerta-config-aviso');
+    if (aviso) aviso.style.display = d.email_configurado ? 'none' : 'block';
+  } catch(e) {}
+}
+
 // ── NAVEGACIÓN ENTRE PÁGINAS ──
 function irA(pageId, el) {
   // Ocultar todas las páginas
@@ -1432,6 +1462,7 @@ function irA(pageId, el) {
   // Cargar datos si es la primera vez que se visita la página
   if (pageId === 'noticias' && !noticiasCache) cargarNoticias();
   if (pageId === 'mercado') cargarEscrituras();
+  if (pageId === 'alertas') verificarConfigEmail();
 
   // Actualizar URL hash para navegación con back/forward
   history.pushState({ page: pageId }, '', '#' + pageId);
