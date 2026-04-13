@@ -748,8 +748,8 @@ async function checkStatus() {
         const fecha = new Date(d.cache.ultima_actualizacion).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
         document.getElementById('stxt').textContent = `Actualizado: ${fecha}`;
       } else {
-        document.getElementById('stxt').textContent = 'Actualizando datos...';
-        document.getElementById('sdot').style.background = '#f59e0b';
+        document.getElementById('stxt').textContent = 'En línea';
+        document.getElementById('sdot').classList.add('live');
       }
     }
   } catch { document.getElementById('stxt').textContent = 'Sin conexión'; }
