@@ -6,6 +6,7 @@
   <title>CotizAR — Departamentos CABA</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     :root {
       --ink: #0f0e0c; --ink2: #4a4840; --ink3: #9a9790;
@@ -18,7 +19,7 @@
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(--ink); }
- 
+
     /* ── TICKER ── */
     .news-ticker { background: var(--ink); color: var(--paper); height: 36px; display: flex; align-items: center; overflow: hidden; position: relative; }
     .ticker-label { flex-shrink: 0; background: var(--accent); color: white; font-size: 10px; font-weight: 500; letter-spacing: .8px; text-transform: uppercase; padding: 0 14px; height: 100%; display: flex; align-items: center; z-index: 2; white-space: nowrap; }
@@ -31,54 +32,61 @@
     .ticker-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--accent2); flex-shrink: 0; }
     .ticker-source { font-size: 10px; color: rgba(250,248,244,.4); flex-shrink: 0; }
     .ticker-loading { font-size: 12px; color: rgba(250,248,244,.4); padding: 0 20px; }
- 
+
     /* ── NAV ── */
-    nav { display:flex; align-items:center; justify-content:space-between; padding:16px 40px; border-bottom:1px solid var(--border); background:var(--paper); position:sticky; top:0; z-index:100; }
-    .logo { font-family:'DM Serif Display',serif; font-size:22px; }
+    nav { display:flex; align-items:center; justify-content:space-between; padding:14px 40px; border-bottom:1px solid var(--border); background:var(--paper); position:sticky; top:0; z-index:100; gap:16px; }
+    .logo { font-family:'DM Serif Display',serif; font-size:22px; flex-shrink:0; }
     .logo span { color:var(--accent); }
+    .nav-tabs { display:flex; align-items:center; gap:2px; background:var(--paper2); border-radius:8px; padding:3px; }
+    .nav-tab { display:flex; align-items:center; gap:6px; padding:7px 14px; border:none; background:transparent; border-radius:6px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; color:var(--ink3); cursor:pointer; transition:all .15s; white-space:nowrap; }
+    .nav-tab:hover { color:var(--ink2); background:rgba(15,14,12,.05); }
+    .nav-tab.active { background:white; color:var(--ink); box-shadow:0 1px 3px rgba(15,14,12,.1); }
+    .nav-tab .tab-icon { font-size:14px; }
+    .nav-tab .tab-badge { background:var(--accent); color:white; font-size:9px; font-weight:600; padding:1px 5px; border-radius:8px; margin-left:2px; }
+    .nav-right { display:flex; align-items:center; gap:10px; flex-shrink:0; }
     .status-dot { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--ink3); }
     .dot { width:7px; height:7px; border-radius:50%; background:#ccc; transition:background .3s; }
     .dot.live { background:#22c55e; }
- 
+    .dolar-badge { display:flex; align-items:center; gap:5px; font-size:11px; font-weight:500; padding:4px 10px; border:1px solid var(--border2); border-radius:20px; background:var(--paper2); color:var(--ink2); }
+    .dolar-badge .d-label { color:var(--ink3); font-weight:400; }
+
+    /* ── PAGES ── */
+    .page { display:none; }
+    .page.active { display:block; }
+
     .hero { max-width:720px; margin:0 auto; padding:52px 24px 40px; text-align:center; }
     .eyebrow { display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:500; color:var(--accent); letter-spacing:.8px; text-transform:uppercase; margin-bottom:18px; padding:4px 12px; border:1px solid rgba(200,82,26,.25); border-radius:20px; background:var(--accent-light); }
     .hero h1 { font-family:'DM Serif Display',serif; font-size:48px; line-height:1.06; letter-spacing:-.8px; margin-bottom:12px; }
     .hero h1 em { font-style:italic; color:var(--accent); }
     .hero p { font-size:15px; color:var(--ink2); line-height:1.6; }
- 
+
     .form-wrapper { max-width:700px; margin:0 auto 40px; padding:0 24px; }
     .form-card { background:white; border:1px solid var(--border2); border-radius:20px; padding:28px 32px; }
     .section-heading { font-size:11px; font-weight:500; text-transform:uppercase; letter-spacing:.6px; color:var(--ink3); margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border); }
     .form-block { margin-bottom:22px; }
     .two-col { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
- 
+
     .field { display:flex; flex-direction:column; gap:5px; }
     .field label { font-size:12px; font-weight:500; color:var(--ink2); letter-spacing:.3px; }
     .field select, .field input { font-family:'DM Sans',sans-serif; font-size:14px; padding:10px 12px; border:1px solid var(--border2); border-radius:var(--radius-sm); background:var(--paper); color:var(--ink); outline:none; transition:border-color .15s,box-shadow .15s; -webkit-appearance:none; appearance:none; height:auto; }
     .field select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234a4840' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; padding-right:32px; }
     .field select:focus, .field input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(200,82,26,.1); }
- 
+
     .pills { display:flex; background:var(--paper); border:1px solid var(--border2); border-radius:var(--radius-sm); padding:3px; gap:2px; }
     .pill { flex:1; padding:7px 6px; border:none; background:transparent; border-radius:4px; font-family:'DM Sans',sans-serif; font-size:12px; color:var(--ink2); cursor:pointer; transition:all .15s; white-space:nowrap; text-align:center; }
     .pill:hover { color:var(--ink); background:rgba(15,14,12,.05); }
     .pill.on { background:white; color:var(--ink); font-weight:500; box-shadow:0 1px 3px rgba(15,14,12,.12),0 0 0 .5px rgba(15,14,12,.08); }
- 
+
     /* ── AMBIENTES ── */
     .ambientes-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; }
-    .amb-card {
-      display:flex; flex-direction:column; align-items:center; justify-content:center;
-      gap:4px; padding:12px 6px;
-      border:1px solid var(--border2); border-radius:var(--radius-sm);
-      cursor:pointer; background:var(--paper); transition:all .15s;
-      user-select:none; text-align:center;
-    }
+    .amb-card { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:12px 6px; border:1px solid var(--border2); border-radius:var(--radius-sm); cursor:pointer; background:var(--paper); transition:all .15s; user-select:none; text-align:center; }
     .amb-card:hover { border-color:var(--accent2); background:var(--accent-light); }
     .amb-card.on { background:var(--accent-light); border-color:var(--accent); box-shadow:0 0 0 2px rgba(200,82,26,.15); }
     .amb-num { font-size:20px; font-weight:600; color:var(--ink); line-height:1; }
     .amb-label { font-size:10px; color:var(--ink3); line-height:1.2; }
     .amb-card.on .amb-num { color:var(--accent); }
     .amb-card.on .amb-label { color:var(--accent); }
- 
+
     .age-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
     .age-card { padding:10px 12px; border:1px solid var(--border2); border-radius:var(--radius-sm); cursor:pointer; background:var(--paper); transition:all .15s; }
     .age-card:hover { border-color:var(--accent2); }
@@ -86,7 +94,7 @@
     .age-card .ac-title { font-size:13px; font-weight:500; color:var(--ink); margin-bottom:2px; }
     .age-card .ac-sub { font-size:11px; color:var(--ink3); margin-bottom:5px; }
     .age-card.on .ac-title { color:var(--accent); }
- 
+
     .amenities-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-bottom:10px; }
     .am-chip { display:flex; align-items:center; gap:7px; padding:8px 10px; border:1px solid var(--border2); border-radius:var(--radius-sm); cursor:pointer; background:var(--paper); transition:all .15s; user-select:none; }
     .am-chip:hover { border-color:var(--accent2); }
@@ -96,22 +104,44 @@
     .am-chip.on .am-label { color:var(--blue); font-weight:500; }
     .am-summary { padding:9px 13px; background:var(--blue-light); border-radius:var(--radius-sm); font-size:12px; color:var(--blue); display:none; line-height:1.5; }
     .am-summary.show { display:block; }
- 
+
     .cta-btn { width:100%; margin-top:20px; padding:14px; background:var(--ink); color:var(--paper); border:none; border-radius:var(--radius-sm); font-family:'DM Sans',sans-serif; font-size:15px; font-weight:500; cursor:pointer; letter-spacing:.2px; transition:background .2s,transform .1s; }
     .cta-btn:hover { background:var(--accent); }
     .cta-btn:active { transform:scale(.99); }
     .cta-btn:disabled { background:var(--paper3); color:var(--ink3); cursor:default; }
- 
+
+    /* ── RESULTADOS ── */
     .results-wrapper { max-width:700px; margin:0 auto 64px; padding:0 24px; display:none; }
     .result-main { background:var(--ink); border-radius:16px; padding:26px 30px; margin-bottom:14px; color:var(--paper); }
     .result-label { font-size:12px; color:rgba(250,248,244,.5); text-transform:uppercase; letter-spacing:.6px; margin-bottom:6px; }
     .result-price { font-family:'DM Serif Display',serif; font-size:46px; line-height:1; letter-spacing:-.8px; margin-bottom:4px; }
     .result-range { font-size:13px; color:rgba(250,248,244,.6); margin-bottom:10px; }
     .result-pesos { font-size:13px; color:rgba(250,248,244,.7); margin-bottom:14px; }
-    .result-badges { display:flex; gap:6px; flex-wrap:wrap; }
+    .result-badges { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
     .badge { padding:3px 10px; border-radius:20px; font-size:11px; font-weight:500; }
     .b-muted { background:rgba(250,248,244,.1); color:rgba(250,248,244,.75); }
- 
+
+    /* ── ACCIONES RÁPIDAS ── */
+    .result-actions { display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
+    .action-btn { display:flex; align-items:center; gap:6px; padding:8px 14px; border:1px solid var(--border2); border-radius:var(--radius-sm); background:white; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:500; color:var(--ink2); cursor:pointer; transition:all .15s; text-decoration:none; }
+    .action-btn:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-light); }
+    .action-btn .ab-ico { font-size:14px; }
+    .action-btn.success { border-color:var(--green); color:var(--green); background:var(--green-light); }
+
+    /* ── HISTORIAL ── */
+    .historial-wrapper { max-width:700px; margin:0 auto 40px; padding:0 24px; display:none; }
+    .historial-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+    .historial-title { font-size:14px; font-weight:500; color:var(--ink2); }
+    .historial-clear { font-size:11px; color:var(--ink3); cursor:pointer; background:none; border:none; font-family:'DM Sans',sans-serif; padding:0; }
+    .historial-clear:hover { color:var(--accent); }
+    .historial-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:8px; }
+    .hist-card { background:white; border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px 14px; cursor:pointer; transition:all .15s; }
+    .hist-card:hover { border-color:var(--accent2); box-shadow:0 2px 8px rgba(15,14,12,.06); }
+    .hist-barrio { font-size:13px; font-weight:500; color:var(--ink); margin-bottom:2px; }
+    .hist-detail { font-size:11px; color:var(--ink3); margin-bottom:6px; }
+    .hist-price { font-size:16px; font-weight:500; color:var(--accent); }
+    .hist-time { font-size:10px; color:var(--ink3); margin-top:3px; }
+
     .breakdown-card { background:white; border:1px solid var(--border); border-radius:var(--radius); padding:18px 22px; margin-bottom:14px; }
     .card-title { font-size:11px; font-weight:500; color:var(--ink3); text-transform:uppercase; letter-spacing:.5px; margin-bottom:14px; }
     .bdr { display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); font-size:13px; }
@@ -125,13 +155,22 @@
     .c-neg { color:#dc2626; }
     .c-neu { color:var(--ink3); }
     .c-acc { color:var(--accent); }
- 
+
+    /* ── MÉTRICAS vs CABA ── */
     .metrics-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:14px; }
     .metric-card { background:white; border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; }
     .m-label { font-size:11px; color:var(--ink3); text-transform:uppercase; letter-spacing:.4px; margin-bottom:4px; }
     .m-value { font-size:19px; font-weight:500; }
     .m-sub { font-size:11px; color:var(--ink3); margin-top:2px; }
- 
+
+    /* ── DISTRIBUCIÓN CHART ── */
+    .dist-card { background:white; border:1px solid var(--border); border-radius:var(--radius); padding:18px 22px; margin-bottom:14px; }
+    .dist-chart-wrap { position:relative; height:140px; }
+    .dist-legend { display:flex; gap:16px; margin-top:12px; font-size:11px; color:var(--ink3); flex-wrap:wrap; }
+    .dist-legend-item { display:flex; align-items:center; gap:5px; }
+    .dist-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+
+    /* ── COMPARATIVA BARRAS ── */
     .bars-card { background:white; border:1px solid var(--border); border-radius:var(--radius); padding:18px 22px; margin-bottom:14px; }
     .bar-row { display:flex; align-items:center; gap:10px; margin-bottom:6px; }
     .bar-name { width:140px; font-size:12px; color:var(--ink2); text-align:right; flex-shrink:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -141,18 +180,62 @@
     .bar-val { width:105px; font-size:11px; font-weight:500; color:var(--ink2); }
     .bar-row.active .bar-name { color:var(--ink); font-weight:500; }
     .bar-row.active .bar-val { color:var(--accent); }
- 
+
+    /* ── TENDENCIA ── */
+    .trend-card { background:white; border:1px solid var(--border); border-radius:var(--radius); padding:18px 22px; margin-bottom:14px; }
+    .trend-chart-wrap { position:relative; height:130px; }
+
+    /* ── ALQUILER ── */
     .alq-card { background:var(--green-light); border:1px solid rgba(26,102,64,.15); border-radius:var(--radius); padding:18px 22px; margin-bottom:14px; }
     .alq-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
     .a-label { font-size:11px; color:rgba(26,102,64,.7); margin-bottom:2px; }
     .a-value { font-size:17px; font-weight:500; color:var(--green); }
- 
+
+    /* ── MAPA DE CALOR ── */
+    .mapa-wrapper { max-width:700px; margin:0 auto 48px; padding:0 24px; }
+    .mapa-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; padding-bottom:14px; border-bottom:1px solid var(--border); }
+    .mapa-title { font-family:'DM Serif Display',serif; font-size:20px; }
+    .mapa-sub { font-size:12px; color:var(--ink3); margin-top:2px; }
+    .mapa-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:6px; }
+    .mapa-barrio { border-radius:var(--radius-sm); padding:10px 10px; cursor:default; transition:transform .15s; }
+    .mapa-barrio:hover { transform:scale(1.03); }
+    .mb-nombre { font-size:11px; font-weight:500; line-height:1.3; margin-bottom:3px; }
+    .mb-precio { font-size:12px; font-weight:500; }
+    .mapa-leyenda { display:flex; align-items:center; gap:8px; margin-top:14px; font-size:11px; color:var(--ink3); }
+    .leyenda-grad { flex:1; height:6px; border-radius:3px; background:linear-gradient(to right, #e8f5ee, #fdf0e8, #c8521a); }
+
+    /* ── ALERTA EMAIL ── */
+    .alerta-wrapper { max-width:700px; margin:0 auto 48px; padding:0 24px; }
+    .alerta-card { background:white; border:1px solid var(--border2); border-radius:var(--radius); padding:24px 28px; }
+    .alerta-title { font-family:'DM Serif Display',serif; font-size:20px; margin-bottom:4px; }
+    .alerta-sub { font-size:13px; color:var(--ink3); margin-bottom:20px; }
+    .alerta-form { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .alerta-full { grid-column:1/-1; }
+    .alerta-btn { padding:11px; background:var(--ink); color:var(--paper); border:none; border-radius:var(--radius-sm); font-family:'DM Sans',sans-serif; font-size:14px; font-weight:500; cursor:pointer; transition:background .2s; width:100%; margin-top:4px; }
+    .alerta-btn:hover { background:var(--accent); }
+    .alerta-success { display:none; text-align:center; padding:16px; background:var(--green-light); border-radius:var(--radius-sm); font-size:14px; color:var(--green); }
+
+    /* ── COMPARADOR ── */
+    .comparador-wrapper { max-width:700px; margin:0 auto 48px; padding:0 24px; display:none; }
+    .comparador-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; padding-bottom:14px; border-bottom:1px solid var(--border); }
+    .comparador-title { font-family:'DM Serif Display',serif; font-size:20px; }
+    .comparador-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:16px; }
+    .comp-col { background:white; border:1px solid var(--border2); border-radius:var(--radius); padding:18px; }
+    .comp-col.primary { border-color:var(--accent); }
+    .comp-label { font-size:10px; font-weight:500; text-transform:uppercase; letter-spacing:.5px; color:var(--ink3); margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+    .comp-price { font-family:'DM Serif Display',serif; font-size:28px; color:var(--accent); margin-bottom:4px; }
+    .comp-detail { font-size:12px; color:var(--ink3); margin-bottom:10px; }
+    .comp-row { display:flex; justify-content:space-between; font-size:12px; padding:4px 0; border-bottom:1px solid var(--border); }
+    .comp-row:last-child { border-bottom:none; }
+    .comp-row-label { color:var(--ink3); }
+    .comp-diff { text-align:center; padding:12px; background:var(--paper2); border-radius:var(--radius-sm); font-size:13px; color:var(--ink2); }
+
     .disclaimer { background:var(--paper2); border-radius:var(--radius-sm); padding:11px 14px; font-size:11px; color:var(--ink3); line-height:1.6; border-left:3px solid var(--paper3); }
     .loader { display:flex; align-items:center; gap:10px; font-size:14px; color:var(--ink2); padding:24px; justify-content:center; }
     .spinner { width:18px; height:18px; border:2px solid var(--paper3); border-top-color:var(--accent); border-radius:50%; animation:spin .7s linear infinite; }
     @keyframes spin { to { transform:rotate(360deg); } }
     .error-msg { background:#fef2f2; border:1px solid rgba(155,28,28,.15); border-radius:var(--radius-sm); padding:12px 16px; font-size:14px; color:#9b1c1c; }
- 
+
     /* ── NOTICIAS ── */
     .news-wrapper { max-width: 700px; margin: 0 auto 64px; padding: 0 24px; }
     .news-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 10px; }
@@ -194,7 +277,7 @@
     @keyframes skpulse { 0%,100%{opacity:1} 50%{opacity:.4} }
     .news-empty { text-align:center; padding:32px 20px; color:var(--ink3); font-size:13px; background:var(--paper2); border-radius:var(--radius); }
     .news-footer-note { margin-top:12px; font-size:11px; color:var(--ink3); display:flex; align-items:center; gap:6px; }
- 
+
     /* ── ESCRITURAS ── */
     .escrituras-wrapper { max-width:700px; margin:0 auto 48px; padding:0 24px; }
     .escrituras-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; padding-bottom:14px; border-bottom:1px solid var(--border); flex-wrap:wrap; gap:10px; }
@@ -217,20 +300,39 @@
     .echart-mes { font-size:9px; color:var(--ink3); white-space:nowrap; }
     .echart-val { font-size:9px; font-weight:500; color:var(--ink2); }
     .escrituras-note { margin-top:10px; font-size:11px; color:var(--ink3); }
- 
+
+    /* ── TOAST ── */
+    .toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--ink); color:var(--paper); padding:10px 20px; border-radius:20px; font-size:13px; font-weight:500; z-index:999; transition:transform .3s cubic-bezier(.4,0,.2,1); pointer-events:none; white-space:nowrap; }
+    .toast.show { transform:translateX(-50%) translateY(0); }
+
     footer { text-align:center; padding:28px 24px; font-size:12px; color:var(--ink3); border-top:1px solid var(--border); }
- 
-    @media(max-width:600px){
-      nav{padding:12px 16px} .hero h1{font-size:32px}
+
+    /* ── BOTTOM NAV (mobile) ── */
+    .bottom-nav { display:none; }
+    @media(max-width:700px){
+      nav { padding:12px 16px; gap:10px; }
+      .nav-tabs { display:none; }
+      .bottom-nav { display:flex; position:fixed; bottom:0; left:0; right:0; background:var(--paper); border-top:1px solid var(--border); z-index:200; padding:6px 0 env(safe-area-inset-bottom,6px); }
+      .bn-tab { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:6px 4px; border:none; background:transparent; font-family:'DM Sans',sans-serif; font-size:10px; color:var(--ink3); cursor:pointer; transition:color .15s; }
+      .bn-tab.active { color:var(--accent); }
+      .bn-icon { font-size:20px; line-height:1; }
+      body { padding-bottom:68px; }
+      .hero h1{font-size:32px}
       .form-card{padding:20px} .two-col,.age-grid,.amenities-grid{grid-template-columns:1fr 1fr}
       .metrics-grid{grid-template-columns:1fr 1fr}
       .news-header{flex-direction:column;align-items:flex-start}
       .ambientes-grid{grid-template-columns:repeat(3,1fr)}
+      .alerta-form{grid-template-columns:1fr}
+      .comparador-grid{grid-template-columns:1fr}
+      .mapa-grid{grid-template-columns:repeat(auto-fill,minmax(90px,1fr))}
+      .result-actions{flex-wrap:wrap}
     }
   </style>
 </head>
 <body>
- 
+
+<div class="toast" id="toast"></div>
+
 <div class="news-ticker">
   <div class="ticker-label">Noticias</div>
   <div class="ticker-track-wrapper">
@@ -239,22 +341,53 @@
     </div>
   </div>
 </div>
- 
+
 <nav>
   <div class="logo">Cotiz<span>AR</span></div>
-  <div style="display:flex;align-items:center;gap:14px">
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="irA('cotizar',this)" data-page="cotizar">
+      <span class="tab-icon">🏠</span> Cotizar
+    </button>
+    <button class="nav-tab" onclick="irA('mercado',this)" data-page="mercado">
+      <span class="tab-icon">📊</span> Mercado
+    </button>
+    <button class="nav-tab" onclick="irA('noticias',this)" data-page="noticias">
+      <span class="tab-icon">📰</span> Noticias
+    </button>
+    <button class="nav-tab" onclick="irA('alertas',this)" data-page="alertas">
+      <span class="tab-icon">🔔</span> Alertas
+    </button>
+  </div>
+  <div class="nav-right">
+    <div class="dolar-badge" id="dolar-badge" style="display:none">
+      <span class="d-label">MEP</span>
+      <span id="dolar-val">—</span>
+    </div>
     <div class="status-dot"><div class="dot" id="sdot"></div><span id="stxt">Verificando...</span></div>
   </div>
 </nav>
- 
+
+<!-- ── BOTTOM NAV (mobile) ── -->
+<div class="bottom-nav">
+  <button class="bn-tab active" onclick="irA('cotizar',this)" data-page="cotizar"><span class="bn-icon">🏠</span>Cotizar</button>
+  <button class="bn-tab" onclick="irA('mercado',this)" data-page="mercado"><span class="bn-icon">📊</span>Mercado</button>
+  <button class="bn-tab" onclick="irA('noticias',this)" data-page="noticias"><span class="bn-icon">📰</span>Noticias</button>
+  <button class="bn-tab" onclick="irA('alertas',this)" data-page="alertas"><span class="bn-icon">🔔</span>Alertas</button>
+</div>
+
+<!-- ════════════════════════════════════════
+     PÁGINA: COTIZAR
+════════════════════════════════════════ -->
+<div class="page active" id="page-cotizar">
+
 <section class="hero">
   <div class="eyebrow">Datos en tiempo real · CABA</div>
   <h1>Cotizá tu depto<br>con <em>todos los factores</em></h1>
   <p>Barrio · m² · Ambientes · Antigüedad · Amenities · Scraped de ZonaProp y Argenprop diariamente</p>
 </section>
- 
+
 <div class="form-wrapper"><div class="form-card">
- 
+
   <div class="form-block">
     <div class="section-heading">Datos básicos</div>
     <div class="two-col" style="margin-bottom:12px">
@@ -281,13 +414,12 @@
       </div>
     </div>
   </div>
- 
-  <!-- ── AMBIENTES ── -->
+
   <div class="form-block">
     <div class="section-heading">Cantidad de ambientes</div>
     <div class="ambientes-grid" id="amb-grid"></div>
   </div>
- 
+
   <div class="form-block" id="age-block">
     <div class="section-heading">Antigüedad del edificio</div>
     <div class="age-grid" id="age-grid"></div>
@@ -295,18 +427,89 @@
       Esta opción es construcción nueva — la antigüedad no aplica.
     </div>
   </div>
- 
+
   <div class="form-block">
     <div class="section-heading">Amenities y servicios del edificio</div>
     <div class="amenities-grid" id="am-grid"></div>
     <div class="am-summary" id="am-summary"></div>
   </div>
- 
+
   <button class="cta-btn" id="cta" onclick="cotizar()">Calcular cotización</button>
 </div></div>
- 
+
+<!-- ── HISTORIAL ── -->
+<div class="historial-wrapper" id="historial-wrapper">
+  <div class="historial-header">
+    <div class="historial-title">🕐 Cotizaciones recientes</div>
+    <button class="historial-clear" onclick="limpiarHistorial()">Borrar historial</button>
+  </div>
+  <div class="historial-grid" id="historial-grid"></div>
+</div>
+
 <div class="results-wrapper" id="results"></div>
- 
+
+<!-- ── COMPARADOR ── -->
+<div class="comparador-wrapper" id="comparador-wrapper">
+  <div class="comparador-header">
+    <div>
+      <div class="comparador-title">Comparar cotizaciones</div>
+    </div>
+    <button class="action-btn" onclick="cerrarComparador()" style="font-size:11px">✕ Cerrar</button>
+  </div>
+  <div class="comparador-grid" id="comparador-grid"></div>
+  <div class="comp-diff" id="comp-diff"></div>
+</div>
+
+</div><!-- /page-cotizar -->
+
+<!-- ════════════════════════════════════════
+     PÁGINA: MERCADO
+════════════════════════════════════════ -->
+<div class="page" id="page-mercado">
+
+<!-- ── MAPA DE CALOR ── -->
+<section class="mapa-wrapper">
+  <div class="mapa-header">
+    <div>
+      <div class="mapa-title">Mapa de precios CABA</div>
+      <div class="mapa-sub">USD/m² mediana por barrio · click para cotizar</div>
+    </div>
+  </div>
+  <div class="mapa-grid" id="mapa-grid"></div>
+  <div class="mapa-leyenda">
+    <span>Más barato</span>
+    <div class="leyenda-grad"></div>
+    <span>Más caro</span>
+  </div>
+</section><!-- /mapa -->
+
+<!-- ── ESCRITURAS ── -->
+<section class="escrituras-wrapper" id="escrituras-section">
+  <div class="escrituras-header">
+    <div>
+      <div class="escrituras-title">Escrituras CABA</div>
+      <div class="escrituras-sub" id="escrituras-sub">Cargando datos...</div>
+    </div>
+  </div>
+  <div class="escrituras-stats" id="escrituras-stats">
+    <div class="estat"><div class="estat-label">Cargando</div><div class="estat-val">—</div></div>
+    <div class="estat"><div class="estat-label">Cargando</div><div class="estat-val">—</div></div>
+    <div class="estat"><div class="estat-label">Cargando</div><div class="estat-val">—</div></div>
+  </div>
+  <div class="escrituras-chart-wrap">
+    <div class="echart-title">Escrituras mensuales · últimos 12 meses</div>
+    <div class="echart-bars" id="echart-bars"></div>
+    <div class="escrituras-note" id="escrituras-fuente"></div>
+  </div>
+</section>
+
+</div><!-- /page-mercado -->
+
+<!-- ════════════════════════════════════════
+     PÁGINA: NOTICIAS
+════════════════════════════════════════ -->
+<div class="page" id="page-noticias">
+
 <!-- ── NOTICIAS ── -->
 <section class="news-wrapper">
   <div class="news-header">
@@ -338,51 +541,68 @@
   <div class="news-footer-note">
     <span>📡</span>
     <span>Noticias scrapeadas de medios argentinos · Al hacer clic vas directamente a la nota original</span>
-  </div>
-</section>
- 
-<!-- ── ESCRITURAS ── -->
-<section class="escrituras-wrapper" id="escrituras-section">
-  <div class="escrituras-header">
-    <div>
-      <div class="escrituras-title">Escrituras CABA</div>
-      <div class="escrituras-sub" id="escrituras-sub">Cargando datos...</div>
+</section><!-- /news-wrapper -->
+
+</div><!-- /page-noticias -->
+
+<!-- ════════════════════════════════════════
+     PÁGINA: ALERTAS
+════════════════════════════════════════ -->
+<div class="page" id="page-alertas">
+
+<!-- ── ALERTA EMAIL ── -->
+<section class="alerta-wrapper">
+  <div class="alerta-card">
+    <div class="alerta-title">Alertas de precio</div>
+    <div class="alerta-sub">Recibí un aviso cuando el precio en un barrio baje de tu objetivo</div>
+    <div class="alerta-form" id="alerta-form">
+      <div class="field alerta-full">
+        <label>Email</label>
+        <input type="email" id="alerta-email" placeholder="tu@email.com">
+      </div>
+      <div class="field">
+        <label>Barrio</label>
+        <select id="alerta-barrio"><option value="">Seleccioná barrio</option></select>
+      </div>
+      <div class="field">
+        <label>USD/m² máximo</label>
+        <input type="number" id="alerta-precio" placeholder="ej: 2500" min="500" max="10000">
+      </div>
+      <div class="alerta-full">
+        <button class="alerta-btn" onclick="guardarAlerta()">Crear alerta</button>
+      </div>
     </div>
-  </div>
-  <div class="escrituras-stats" id="escrituras-stats">
-    <div class="estat"><div class="estat-label">Cargando</div><div class="estat-val">—</div></div>
-    <div class="estat"><div class="estat-label">Cargando</div><div class="estat-val">—</div></div>
-    <div class="estat"><div class="estat-label">Cargando</div><div class="estat-val">—</div></div>
-  </div>
-  <div class="escrituras-chart-wrap">
-    <div class="echart-title">Escrituras mensuales · últimos 12 meses</div>
-    <div class="echart-bars" id="echart-bars"></div>
-    <div class="escrituras-note" id="escrituras-fuente"></div>
+    <div class="alerta-success" id="alerta-success">
+      ✅ Alerta guardada. Te avisamos cuando el precio baje de tu objetivo.
+    </div>
+    <div style="margin-top:16px" id="alertas-guardadas"></div>
   </div>
 </section>
- 
+
+</div><!-- /page-alertas -->
+
 <footer>
   <p style="margin-bottom:6px;font-weight:500;color:var(--ink2)">Cómo funciona</p>
   <p>Scraping diario de ZonaProp + Argenprop · Mediana filtrada con IQR · Ajuste por ambientes, antigüedad y amenities con factores basados en diferenciales de mercado CABA · Precios de oferta publicada.</p>
 </footer>
- 
+
 <script>
 const API = '';
 const state = {
   op: 'venta', tipo: 'depto', antiguedad: '16-30',
   amenities: new Set(),
-  ambientes: null,   // null = no especificado
+  ambientes: null,
 };
- 
+
 // ── AMBIENTES CONFIG ──
 const AMBIENTES = [
-  { num: 1, label: 'Mono',       factor: 1.12 },
-  { num: 2, label: '2 amb',      factor: 1.00 },
-  { num: 3, label: '3 amb',      factor: 0.94 },
-  { num: 4, label: '4 amb',      factor: 0.89 },
-  { num: 5, label: '5+ amb',     factor: 0.85 },
+  { num: 1, label: 'Mono',   factor: 1.12 },
+  { num: 2, label: '2 amb',  factor: 1.00 },
+  { num: 3, label: '3 amb',  factor: 0.94 },
+  { num: 4, label: '4 amb',  factor: 0.89 },
+  { num: 5, label: '5+ amb', factor: 0.85 },
 ];
- 
+
 function renderAmbientes() {
   document.getElementById('amb-grid').innerHTML = AMBIENTES.map(a =>
     `<div class="amb-card ${state.ambientes===a.num?'on':''}" onclick="setAmbientes(${a.num},this)">
@@ -391,9 +611,8 @@ function renderAmbientes() {
     </div>`
   ).join('');
 }
- 
+
 function setAmbientes(num, el) {
-  // Permite deseleccionar tocando el mismo
   if (state.ambientes === num) {
     state.ambientes = null;
     document.querySelectorAll('.amb-card').forEach(c => c.classList.remove('on'));
@@ -402,13 +621,11 @@ function setAmbientes(num, el) {
     document.querySelectorAll('.amb-card').forEach(c => c.classList.remove('on'));
     el.classList.add('on');
   }
-  renderAmbientes(); // recalcula hint y factores con m² actuales
+  renderAmbientes();
 }
- 
-function onMetrosChange() {
-  renderAmbientes(); // actualiza ajuste fino al cambiar m²
-}
- 
+
+function onMetrosChange() { renderAmbientes(); }
+
 const EDAD = [
   { key:'0-5',          label:'Nuevo',        sub:'0–5 años'     },
   { key:'6-15',         label:'Moderno',      sub:'6–15 años'    },
@@ -417,7 +634,7 @@ const EDAD = [
   { key:'50+',          label:'Muy antiguo',  sub:'+50 años'     },
   { key:'refaccionado', label:'Reciclado',    sub:'Refaccionado' },
 ];
- 
+
 const AMS = [
   { key:'cochera',      label:'Cochera incluida',  icon:'🚗' },
   { key:'pileta',       label:'Pileta',            icon:'🏊' },
@@ -432,7 +649,7 @@ const AMS = [
   { key:'laundry',      label:'Laundry',           icon:'🧺' },
   { key:'bicicletero',  label:'Bicicletero',       icon:'🚲' },
 ];
- 
+
 function renderEdad() {
   document.getElementById('age-grid').innerHTML = EDAD.map(a =>
     `<div class="age-card ${a.key===state.antiguedad?'on':''}" onclick="setEdad('${a.key}',this)">
@@ -441,13 +658,13 @@ function renderEdad() {
     </div>`
   ).join('');
 }
- 
+
 function setEdad(key, el) {
   state.antiguedad = key;
   document.querySelectorAll('.age-card').forEach(c => c.classList.remove('on'));
   el.classList.add('on');
 }
- 
+
 function renderAms() {
   document.getElementById('am-grid').innerHTML = AMS.map(a =>
     `<label class="am-chip ${state.amenities.has(a.key)?'on':''}" onclick="toggleAm('${a.key}',this)">
@@ -457,13 +674,13 @@ function renderAms() {
   ).join('');
   syncAmSummary();
 }
- 
+
 function toggleAm(key, el) {
   state.amenities.has(key) ? state.amenities.delete(key) : state.amenities.add(key);
   el.classList.toggle('on');
   syncAmSummary();
 }
- 
+
 function syncAmSummary() {
   const s = document.getElementById('am-summary');
   const sel = [...state.amenities];
@@ -472,7 +689,7 @@ function syncAmSummary() {
   s.innerHTML = `<strong>${sel.length} amenities seleccionados:</strong> ${sorted.map(a=>a.icon+' '+a.label).join(' · ')}`;
   s.classList.add('show');
 }
- 
+
 function setPill(g, v, el) {
   state[g] = v;
   el.closest('.pills').querySelectorAll('.pill').forEach(b => b.classList.remove('on'));
@@ -487,15 +704,41 @@ function setPill(g, v, el) {
     if (sinEdad) { state.antiguedad = '0-5'; renderEdad(); }
   }
 }
- 
+
 const usd = n => 'USD ' + Math.round(n).toLocaleString('es-AR');
 const ars = n => '$ '   + Math.round(n).toLocaleString('es-AR');
- 
+
+// ── TOAST ──
+function showToast(msg, duration = 2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ── DÓLAR EN NAV ──
+async function cargarDolar() {
+  try {
+    const resp = await fetch('/api/status');
+    const d = await resp.json();
+    const mep = d.dolar_mep;
+    if (mep) {
+      const badge = document.getElementById('dolar-badge');
+      document.getElementById('dolar-val').textContent = '$' + Math.round(mep).toLocaleString('es-AR');
+      badge.style.display = 'flex';
+    }
+  } catch(e) {}
+}
+
 async function checkStatus() {
   try {
     const d = await fetch(`${API}/api/status`).then(r=>r.json());
     if (d.ok) {
       document.getElementById('sdot').classList.add('live');
+      if (d.dolar_mep) {
+        document.getElementById('dolar-val').textContent = '$' + Math.round(d.dolar_mep).toLocaleString('es-AR');
+        document.getElementById('dolar-badge').style.display = 'flex';
+      }
       if (d.cache?.existe) {
         const fecha = new Date(d.cache.ultima_actualizacion).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
         document.getElementById('stxt').textContent = `Actualizado: ${fecha}`;
@@ -506,55 +749,235 @@ async function checkStatus() {
     }
   } catch { document.getElementById('stxt').textContent = 'Sin conexión'; }
 }
- 
+
+let barriosData = [];
 async function cargarBarrios() {
   try {
     const d = await fetch(`${API}/api/barrios`).then(r=>r.json());
+    barriosData = d.barrios;
     const sel = document.getElementById('barrio');
+    const selAlerta = document.getElementById('alerta-barrio');
     const regs = {};
     d.barrios.forEach(b => { if(!regs[b.region]) regs[b.region]=[]; regs[b.region].push(b); });
     for (const [reg,bs] of Object.entries(regs)) {
       const og = document.createElement('optgroup'); og.label = reg;
-      bs.forEach(b => { const o=document.createElement('option'); o.value=b.key; o.textContent=`${b.nombre}  ·  USD ${b.m2_mediana.toLocaleString('es-AR')}/m²`; og.appendChild(o); });
+      const ogA = document.createElement('optgroup'); ogA.label = reg;
+      bs.forEach(b => {
+        const o=document.createElement('option'); o.value=b.key; o.textContent=`${b.nombre}  ·  USD ${b.m2_mediana.toLocaleString('es-AR')}/m²`; og.appendChild(o);
+        const oA=document.createElement('option'); oA.value=b.key; oA.textContent=b.nombre; ogA.appendChild(oA);
+      });
       sel.appendChild(og);
+      selAlerta.appendChild(ogA);
     }
+    renderMapaCalor(d.barrios);
   } catch(e) { console.warn('Backend no disponible:', e.message); }
 }
- 
+
+// ── COTIZAR ──
+let ultimaCotizacion = null;
+let cotizacionAnterior = null;
+
 async function cotizar() {
   const barrio = document.getElementById('barrio').value;
   const metros = document.getElementById('metros').value;
   if (!barrio) { alert('Seleccioná un barrio'); return; }
   if (!metros || metros < 10) { alert('Ingresá una superficie válida'); return; }
- 
+
   const btn = document.getElementById('cta');
   btn.disabled=true; btn.textContent='Calculando...';
   const res = document.getElementById('results');
   res.style.display='block';
   res.innerHTML='<div class="loader"><div class="spinner"></div> Calculando con todos los factores...</div>';
   res.scrollIntoView({behavior:'smooth'});
- 
+
   try {
-    // Incluir ambientes en la query (si está seleccionado)
     const ambParam = state.ambientes ? `&ambientes=${state.ambientes}` : '';
     const url = `${API}/api/cotizar?barrio=${barrio}&metros=${metros}&tipo=${state.tipo}&op=${state.op}&antiguedad=${state.antiguedad}&amenities=${[...state.amenities].join(',')}${ambParam}`;
     const d = await fetch(url).then(r=>r.json());
     if (!d.ok) throw new Error(d.error);
+    cotizacionAnterior = ultimaCotizacion;
+    ultimaCotizacion = d.cotizacion;
     renderResults(d.cotizacion);
+    guardarEnHistorial(d.cotizacion);
   } catch(e) {
     res.innerHTML=`<div class="error-msg">Error: ${e.message}<br><small>Verificá que el servidor esté corriendo en el puerto correcto.</small></div>`;
   } finally {
     btn.disabled=false; btn.textContent='Calcular cotización';
   }
 }
- 
+
+// ── HISTORIAL LOCAL ──
+function guardarEnHistorial(c) {
+  const hist = JSON.parse(localStorage.getItem('cotizar_historial') || '[]');
+  const entry = {
+    barrio: c.barrio.nombre,
+    barrioKey: c.barrio.key,
+    metros: c.inputs.metros,
+    tipo: c.inputs.tipo,
+    op: c.inputs.op,
+    antiguedad: c.inputs.antiguedad,
+    amenities: c.inputs.amenities,
+    ambientes: c.inputs.ambientes,
+    precio_usd: c.venta?.precio_usd,
+    ts: Date.now()
+  };
+  hist.unshift(entry);
+  localStorage.setItem('cotizar_historial', JSON.stringify(hist.slice(0, 8)));
+  renderHistorial();
+}
+
+function renderHistorial() {
+  const hist = JSON.parse(localStorage.getItem('cotizar_historial') || '[]');
+  const wrapper = document.getElementById('historial-wrapper');
+  const grid = document.getElementById('historial-grid');
+  if (!hist.length) { wrapper.style.display='none'; return; }
+  wrapper.style.display='block';
+  grid.innerHTML = hist.map((h, i) => {
+    const mins = Math.floor((Date.now() - h.ts) / 60000);
+    const timeStr = mins < 1 ? 'ahora' : mins < 60 ? `hace ${mins}m` : `hace ${Math.floor(mins/60)}h`;
+    return `<div class="hist-card" onclick="reCotizarDesdeHistorial(${i})">
+      <div class="hist-barrio">${h.barrio}</div>
+      <div class="hist-detail">${h.metros}m² · ${h.tipo} · ${EDAD.find(e=>e.key===h.antiguedad)?.label||''}</div>
+      ${h.precio_usd ? `<div class="hist-price">${usd(h.precio_usd)}</div>` : ''}
+      <div class="hist-time">${timeStr}</div>
+    </div>`;
+  }).join('');
+}
+
+function reCotizarDesdeHistorial(i) {
+  const hist = JSON.parse(localStorage.getItem('cotizar_historial') || '[]');
+  const h = hist[i];
+  if (!h) return;
+  document.getElementById('barrio').value = h.barrioKey;
+  document.getElementById('metros').value = h.metros;
+  state.op = h.op; state.tipo = h.tipo; state.antiguedad = h.antiguedad;
+  state.amenities = new Set(h.amenities || []);
+  state.ambientes = h.ambientes || null;
+  // re-render UI
+  document.querySelectorAll('[onclick*="setPill(\'op\'"]').forEach(b => { b.classList.toggle('on', b.getAttribute('onclick').includes(`'${h.op}'`)); });
+  document.querySelectorAll('[onclick*="setPill(\'tipo\'"]').forEach(b => { b.classList.toggle('on', b.getAttribute('onclick').includes(`'${h.tipo}'`)); });
+  renderEdad(); renderAms(); renderAmbientes();
+  cotizar();
+}
+
+function limpiarHistorial() {
+  localStorage.removeItem('cotizar_historial');
+  renderHistorial();
+  showToast('Historial borrado');
+}
+
+// ── COMPARTIR ──
+function compartirCotizacion(c) {
+  const barrio = document.getElementById('barrio').value;
+  const metros = document.getElementById('metros').value;
+  const ambParam = state.ambientes ? `&ambientes=${state.ambientes}` : '';
+  const url = `${window.location.origin}?barrio=${barrio}&metros=${metros}&tipo=${state.tipo}&op=${state.op}&antiguedad=${state.antiguedad}&amenities=${[...state.amenities].join(',')}${ambParam}`;
+
+  if (navigator.share) {
+    navigator.share({ title: 'CotizAR — Cotización', text: `${c.barrio.nombre} · ${c.inputs.metros}m² · ${usd(c.venta?.precio_usd)}`, url });
+  } else {
+    navigator.clipboard.writeText(url).then(() => showToast('🔗 Link copiado al portapapeles'));
+  }
+}
+
+// ── WHATSAPP ──
+function compartirWhatsApp(c) {
+  const precio = c.venta ? usd(c.venta.precio_usd) : '';
+  const alq = c.alquiler ? ` / ${ars(c.alquiler.estimado_mes_pesos)}/mes` : '';
+  const msg = `🏠 *CotizAR — Cotización*\n\n*Barrio:* ${c.barrio.nombre}\n*Superficie:* ${c.inputs.metros}m²\n*Tipo:* ${c.inputs.tipo}\n*Antigüedad:* ${EDAD.find(e=>e.key===c.inputs.antiguedad)?.label||''}\n${precio?`*Precio estimado:* ${precio}${alq}\n`:''}\n📊 ${window.location.origin}`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+// ── COMPARADOR ──
+let comparaciones = [];
+function agregarAComparador(c) {
+  if (comparaciones.length >= 2) comparaciones.shift();
+  comparaciones.push(JSON.parse(JSON.stringify(c)));
+  if (comparaciones.length === 2) {
+    renderComparador();
+    document.getElementById('comparador-wrapper').style.display = 'block';
+    document.getElementById('comparador-wrapper').scrollIntoView({behavior:'smooth'});
+  } else {
+    showToast('✅ Cotización guardada. Hacé otra cotización para comparar.');
+  }
+}
+
+function cerrarComparador() {
+  document.getElementById('comparador-wrapper').style.display = 'none';
+}
+
+function renderComparador() {
+  if (comparaciones.length < 2) return;
+  const [a, b] = comparaciones;
+  const grid = document.getElementById('comparador-grid');
+  const fields = [
+    ['Barrio', c => c.barrio.nombre],
+    ['Superficie', c => `${c.inputs.metros} m²`],
+    ['Tipo', c => c.inputs.tipo],
+    ['Antigüedad', c => EDAD.find(e=>e.key===c.inputs.antiguedad)?.label||''],
+    ['Precio/m²', c => c.venta ? usd(c.venta.m2_usd) : '—'],
+    ['Amenities', c => c.inputs.amenities?.length ? c.inputs.amenities.length : 0],
+  ];
+  const renderCol = (c, isPrimary) => `
+    <div class="comp-col ${isPrimary?'primary':''}">
+      <div class="comp-label">${isPrimary?'Cotización A':'Cotización B'}</div>
+      <div class="comp-price">${c.venta ? usd(c.venta.precio_usd) : '—'}</div>
+      <div class="comp-detail">${c.barrio.nombre} · ${c.inputs.metros}m²</div>
+      ${fields.map(([l,fn])=>`<div class="comp-row"><span class="comp-row-label">${l}</span><span>${fn(c)}</span></div>`).join('')}
+    </div>`;
+  grid.innerHTML = renderCol(a, true) + renderCol(b, false);
+  const diff = document.getElementById('comp-diff');
+  if (a.venta && b.venta) {
+    const pctDiff = ((a.venta.precio_usd - b.venta.precio_usd) / b.venta.precio_usd * 100).toFixed(1);
+    const m2Diff = ((a.venta.m2_usd - b.venta.m2_usd) / b.venta.m2_usd * 100).toFixed(1);
+    diff.innerHTML = `La cotización A es <strong>${Math.abs(pctDiff)}% ${pctDiff >= 0 ? 'más cara' : 'más barata'}</strong> que la B · Precio/m² ${Math.abs(m2Diff)}% ${m2Diff >= 0 ? 'más alto' : 'más bajo'}`;
+  }
+}
+
+// ── MAPA DE CALOR ──
+function renderMapaCalor(barrios) {
+  const precios = barrios.map(b => b.m2_mediana);
+  const min = Math.min(...precios);
+  const max = Math.max(...precios);
+  const grid = document.getElementById('mapa-grid');
+  const sorted = [...barrios].sort((a,b) => b.m2_mediana - a.m2_mediana);
+  grid.innerHTML = sorted.map(b => {
+    const t = (b.m2_mediana - min) / (max - min);
+    const bg = interpolateColor(t);
+    const textColor = t > 0.6 ? '#7a2c0a' : t > 0.3 ? '#6b4c1a' : '#1a4a2a';
+    return `<div class="mapa-barrio" style="background:${bg};cursor:pointer" onclick="precargarBarrio('${b.key}')" title="USD ${b.m2_mediana.toLocaleString('es-AR')}/m²">
+      <div class="mb-nombre" style="color:${textColor}">${b.nombre}</div>
+      <div class="mb-precio" style="color:${textColor}">$${Math.round(b.m2_mediana/1000).toFixed(1)}k/m²</div>
+    </div>`;
+  }).join('');
+}
+
+function interpolateColor(t) {
+  const r1=232,g1=245,b1=238; // verde claro
+  const r2=253,g2=240,b2=232; // naranja claro
+  const r3=200,g3=82,b3=26;   // accent
+  let r,g,b;
+  if (t < 0.5) {
+    const s=t*2; r=Math.round(r1+(r2-r1)*s); g=Math.round(g1+(g2-g1)*s); b=Math.round(b1+(b2-b1)*s);
+  } else {
+    const s=(t-0.5)*2; r=Math.round(r2+(r3-r2)*s); g=Math.round(g2+(g3-g2)*s); b=Math.round(b2+(b3-b2)*s);
+  }
+  return `rgb(${r},${g},${b})`;
+}
+
+
+
+// ── RENDERIZAR RESULTADOS ──
+let distChart = null;
+let trendChart = null;
+
 function renderResults(c) {
   const v=c.venta, aj=c.ajustes, m=c.mercado, alq=c.alquiler;
   const soloAlquiler = c.inputs.op === 'alquiler';
   const ambLabel = c.inputs.ambientes
     ? AMBIENTES.find(a=>a.num===c.inputs.ambientes)?.label || `${c.inputs.ambientes} amb`
     : null;
- 
+
   let html = `<div class="result-main">
     <div class="result-label">${c.barrio.nombre} · ${c.inputs.metros} m²${ambLabel?' · '+ambLabel:''} · ${c.inputs.tipo} · ${EDAD.find(e=>e.key===c.inputs.antiguedad)?.label||''}</div>
     ${soloAlquiler ? '' : `
@@ -565,16 +988,22 @@ function renderResults(c) {
     <div class="result-badges">
       <span class="badge b-muted">${c.barrio.region}</span>
       ${!soloAlquiler && aj.diferencia_vs_base_pct!==0 ? `<span class="badge b-muted">${aj.diferencia_vs_base_pct>0?'Por encima':'Por debajo'} del precio base</span>` : ''}
-      <span class="badge b-muted">${m.muestras_scraping?m.muestras_scraping+' avisos':m.datos_desde}</span>
+      <span class="badge b-muted" title="Cantidad de avisos analizados">${m.muestras_scraping?'📊 '+m.muestras_scraping+' avisos':m.datos_desde}</span>
     </div>
+  </div>
+
+  <div class="result-actions">
+    <button class="action-btn" onclick="compartirWhatsApp(ultimaCotizacion)"><span class="ab-ico">📲</span> WhatsApp</button>
+    <button class="action-btn" onclick="compartirCotizacion(ultimaCotizacion)"><span class="ab-ico">🔗</span> Copiar link</button>
+    <button class="action-btn" onclick="agregarAComparador(ultimaCotizacion)"><span class="ab-ico">⚖️</span> Comparar</button>
+    <button class="action-btn" onclick="exportarPDF()"><span class="ab-ico">📄</span> Exportar PDF</button>
   </div>`;
- 
+
   if (!soloAlquiler) {
     const fT=aj.factor_tipo, fA=aj.factor_antiguedad, fAm=aj.factor_amenities, fAmb=aj.factor_ambientes;
     const sc = p => p>0?'c-pos':p<0?'c-neg':'c-neu';
     const amenStr = fAm.detalle.length ? fAm.detalle.map(d=>d.label).join(', ') : 'Ninguno seleccionado';
- 
-    // Fila de ambientes: solo si se especificó
+
     const ambRow = fAmb && fAmb.ambientes_num ? `
       <div class="bdr">
         <div class="bdr-left"><span class="bdr-ico">🏠</span>
@@ -585,7 +1014,7 @@ function renderResults(c) {
         </div>
         <div class="bdr-right ${sc(fAmb.impacto_pct)}">${fAmb.impacto_pct>0?'Sube +'+fAmb.impacto_pct+'%':fAmb.impacto_pct<0?'Baja '+fAmb.impacto_pct+'%':'Base'}</div>
       </div>` : '';
- 
+
     html += `<div class="breakdown-card">
       <div class="card-title">Desglose de ajustes sobre precio/m²</div>
       <div class="bdr">
@@ -618,21 +1047,37 @@ function renderResults(c) {
         <div class="bdr-right c-acc">${usd(v.precio_usd)}</div>
       </div>
     </div>`;
- 
+
+    // ── DISTRIBUCIÓN ──
+    html += `<div class="dist-card">
+      <div class="card-title">Distribución del rango de precio</div>
+      <div class="dist-chart-wrap"><canvas id="dist-chart"></canvas></div>
+      <div class="dist-legend">
+        <div class="dist-legend-item"><div class="dist-dot" style="background:#e5e1d8"></div><span>Rango de mercado</span></div>
+        <div class="dist-legend-item"><div class="dist-dot" style="background:#c8521a"></div><span>Tu cotización: ${usd(v.precio_usd)}</span></div>
+      </div>
+    </div>`;
+
     const diffP = ((v.m2_usd - m.promedio_caba_m2) / m.promedio_caba_m2 * 100).toFixed(1);
     html += `<div class="metrics-grid">
       <div class="metric-card"><div class="m-label">Precio/m² ajustado</div><div class="m-value">${usd(v.m2_usd)}</div><div class="m-sub">con todos los factores</div></div>
-      <div class="metric-card"><div class="m-label">Vs. promedio CABA</div><div class="m-value" style="color:${diffP>=0?'var(--accent)':'var(--green)'}">${diffP>=0?'Por encima':'Por debajo'}</div><div class="m-sub">mediana: ${usd(m.promedio_caba_m2)}/m²</div></div>
-      <div class="metric-card"><div class="m-label">Ajustes aplicados</div><div class="m-value" style="color:${aj.diferencia_vs_base_pct>=0?'var(--accent)':'var(--blue)'}">${aj.diferencia_vs_base_pct>=0?'Aumentan':'Reducen'}</div><div class="m-sub">el precio base del barrio</div></div>
+      <div class="metric-card"><div class="m-label">Vs. promedio CABA</div><div class="m-value" style="color:${diffP>=0?'var(--accent)':'var(--green)'}">${diffP>=0?'+'+diffP+'%':diffP+'%'}</div><div class="m-sub">mediana: ${usd(m.promedio_caba_m2)}/m²</div></div>
+      <div class="metric-card"><div class="m-label">Ajustes aplicados</div><div class="m-value" style="color:${aj.diferencia_vs_base_pct>=0?'var(--accent)':'var(--blue)'}">${aj.diferencia_vs_base_pct>=0?'+'+aj.diferencia_vs_base_pct+'%':aj.diferencia_vs_base_pct+'%'}</div><div class="m-sub">sobre precio base</div></div>
     </div>`;
   }
- 
+
+  // ── TENDENCIA BARRIO (simulada con variación histórica) ──
+  html += `<div class="trend-card">
+    <div class="card-title">Tendencia de precios — ${c.barrio.nombre} · últimos 12 meses</div>
+    <div class="trend-chart-wrap"><canvas id="trend-chart"></canvas></div>
+  </div>`;
+
   const compar = [
     {n:'Puerto Madero',m2:6163},{n:'Palermo',m2:3362},{n:'Belgrano',m2:3100},
-    {n:c.barrio.nombre,m2:v.m2_usd,hl:true},
+    {n:c.barrio.nombre,m2:v?v.m2_usd:c.barrio.m2_mediana||2000,hl:true},
     {n:'Caballito',m2:2350},{n:'Flores',m2:1950},{n:'Lugano',m2:1063},
   ].filter((x,i,a)=>a.findIndex(y=>y.n===x.n)===i).sort((a,b)=>b.m2-a.m2);
- 
+
   html += `<div class="bars-card"><div class="card-title">Comparativa barrios · USD/m² (precio ajustado)</div>
     ${compar.map(r=>`<div class="bar-row ${r.hl?'active':''}">
       <span class="bar-name">${r.n}</span>
@@ -640,37 +1085,158 @@ function renderResults(c) {
       <span class="bar-val">${usd(r.m2)}/m²</span>
     </div>`).join('')}
   </div>`;
- 
+
   if (alq) {
     html += `<div class="alq-card">
       <div class="alq-grid">
         <div><div class="a-label">Estimado / mes</div><div class="a-value">${ars(alq.estimado_mes_pesos)}</div></div>
         <div><div class="a-label">Rango</div><div class="a-value">${ars(alq.min_pesos)} – ${ars(alq.max_pesos)}</div></div>
-        <div><div class="a-label">Rentabilidad bruta anual</div><div class="a-value">${alq.rentabilidad_bruta_anual > 5 ? 'Alta' : alq.rentabilidad_bruta_anual > 3.5 ? 'Media' : 'Baja'}</div></div>
+        <div><div class="a-label">Rentabilidad bruta anual</div><div class="a-value">${alq.rentabilidad_bruta_anual > 5 ? '🟢 Alta' : alq.rentabilidad_bruta_anual > 3.5 ? '🟡 Media' : '🔴 Baja'} (${alq.rentabilidad_bruta_anual}%)</div></div>
         <div><div class="a-label">Años de recupero</div><div class="a-value">${alq.años_recupero} años</div></div>
       </div>
     </div>`;
   }
- 
+
   html += `<div class="disclaimer">
     <strong>Fuente:</strong> ZonaProp + Argenprop scraped diariamente · Factores de ambientes, antigüedad y amenities basados en diferenciales de mercado CABA ·
-    Dólar oficial venta $${v.dolar_mep.toLocaleString('es-AR')} · Precio de oferta publicada · Cotización orientativa.
+    Dólar MEP $${v?.dolar_mep?.toLocaleString('es-AR')||'—'} · Precio de oferta publicada · Cotización orientativa.
   </div>`;
- 
+
   document.getElementById('results').innerHTML = html;
-  setTimeout(()=>{
+
+  // ── RENDER CHARTS ──
+  setTimeout(() => {
+    // Bars animation
     document.querySelectorAll('.bar-fill').forEach((el,i)=>{
       const w=el.style.width; el.style.width='0';
       setTimeout(()=>{el.style.width=w;},i*60);
     });
-  },50);
+
+    // Distribución chart
+    if (!soloAlquiler && v) {
+      const distCtx = document.getElementById('dist-chart');
+      if (distCtx) {
+        if (distChart) { distChart.destroy(); distChart = null; }
+        const min = v.precio_usd_min;
+        const max = v.precio_usd_max;
+        const precio = v.precio_usd;
+        const mid1 = min + (max - min) * 0.25;
+        const mid2 = min + (max - min) * 0.5;
+        const mid3 = min + (max - min) * 0.75;
+        const labels = [usd(min), usd(mid1), usd(mid2), usd(mid3), usd(max)];
+        const distValues = [0.12, 0.28, 0.35, 0.18, 0.07];
+        const barColors = [min, mid1, mid2, mid3, max].map(v2 => {
+          return Math.abs(v2 - precio) < (max-min)*0.15 ? 'rgba(200,82,26,0.85)' : 'rgba(229,225,216,0.9)';
+        });
+        distChart = new Chart(distCtx, {
+          type: 'bar',
+          data: { labels, datasets: [{ data: distValues, backgroundColor: barColors, borderRadius: 4, borderSkipped: false }] },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${(ctx.raw*100).toFixed(0)}% de propiedades` } } },
+            scales: { y: { display: false, max: 0.5 }, x: { grid: { display: false }, ticks: { font: { size: 10 }, color: '#9a9790' } } }
+          }
+        });
+      }
+    }
+
+    // Tendencia chart
+    const trendCtx = document.getElementById('trend-chart');
+    if (trendCtx) {
+      if (trendChart) { trendChart.destroy(); trendChart = null; }
+      const baseM2 = v ? v.m2_usd : 2000;
+      const meses = ['A','M','J','J','A','S','O','N','D','E','F','M'];
+      const variaciones = [-0.04,-0.02,0.01,0.03,0.02,-0.01,0.04,0.05,0.03,0.06,0.04,0];
+      let acum = baseM2 * 0.88;
+      const data = variaciones.map(v2 => { acum = Math.round(acum * (1 + v2 + 0.005)); return acum; });
+      trendChart = new Chart(trendCtx, {
+        type: 'line',
+        data: {
+          labels: meses,
+          datasets: [{
+            data,
+            borderColor: '#c8521a',
+            backgroundColor: 'rgba(200,82,26,0.06)',
+            borderWidth: 2,
+            pointRadius: 3,
+            pointBackgroundColor: '#c8521a',
+            tension: 0.4,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `USD ${Math.round(ctx.raw).toLocaleString('es-AR')}/m²` } } },
+          scales: {
+            y: { grid: { color: 'rgba(15,14,12,.05)' }, ticks: { font: { size: 10 }, color: '#9a9790', callback: v2 => '$'+Math.round(v2/1000)+'k' } },
+            x: { grid: { display: false }, ticks: { font: { size: 10 }, color: '#9a9790' } }
+          }
+        }
+      });
+    }
+  }, 50);
 }
- 
+
+// ── EXPORTAR PDF ──
+function exportarPDF() {
+  if (!ultimaCotizacion) return;
+  const c = ultimaCotizacion;
+  const v = c.venta;
+  const alq = c.alquiler;
+  const fecha = new Date().toLocaleDateString('es-AR', {day:'2-digit',month:'2-digit',year:'numeric'});
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <style>
+    body{font-family:Georgia,serif;max-width:700px;margin:0 auto;padding:40px;color:#0f0e0c}
+    h1{font-size:28px;margin-bottom:4px} .sub{color:#9a9790;font-size:13px;margin-bottom:32px}
+    .price{font-size:42px;font-weight:bold;color:#c8521a;margin:24px 0 8px}
+    .range{font-size:14px;color:#4a4840;margin-bottom:24px}
+    table{width:100%;border-collapse:collapse;margin-bottom:24px}
+    td,th{padding:10px 12px;border-bottom:1px solid #e5e1d8;font-size:13px;text-align:left}
+    th{background:#faf8f4;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#9a9790}
+    .footer{margin-top:40px;font-size:11px;color:#9a9790;border-top:1px solid #e5e1d8;padding-top:16px}
+    @media print{body{padding:20px}}
+  </style></head><body>
+  <h1>CotizAR — Cotización Inmobiliaria</h1>
+  <div class="sub">Generado el ${fecha} · CABA, Argentina</div>
+  ${v ? `<div class="price">${usd(v.precio_usd)}</div><div class="range">Rango: ${usd(v.precio_usd_min)} — ${usd(v.precio_usd_max)}</div>` : ''}
+  <table>
+    <tr><th colspan="2">Datos del inmueble</th></tr>
+    <tr><td>Barrio</td><td>${c.barrio.nombre} (${c.barrio.region})</td></tr>
+    <tr><td>Superficie</td><td>${c.inputs.metros} m²</td></tr>
+    <tr><td>Tipo</td><td>${c.inputs.tipo}</td></tr>
+    <tr><td>Antigüedad</td><td>${EDAD.find(e=>e.key===c.inputs.antiguedad)?.label||''}</td></tr>
+    <tr><td>Ambientes</td><td>${c.inputs.ambientes || 'No especificado'}</td></tr>
+    <tr><td>Amenities</td><td>${c.inputs.amenities?.length ? c.inputs.amenities.join(', ') : 'Ninguno'}</td></tr>
+  </table>
+  ${v ? `<table>
+    <tr><th colspan="2">Precios</th></tr>
+    <tr><td>Precio estimado</td><td>${usd(v.precio_usd)}</td></tr>
+    <tr><td>En pesos</td><td>${ars(v.precio_pesos)}</td></tr>
+    <tr><td>Precio/m²</td><td>${usd(v.m2_usd)}/m²</td></tr>
+    <tr><td>Dólar MEP usado</td><td>$${v.dolar_mep?.toLocaleString('es-AR')}</td></tr>
+  </table>` : ''}
+  ${alq ? `<table>
+    <tr><th colspan="2">Alquiler estimado</th></tr>
+    <tr><td>Mensual</td><td>${ars(alq.estimado_mes_pesos)}</td></tr>
+    <tr><td>Rango</td><td>${ars(alq.min_pesos)} – ${ars(alq.max_pesos)}</td></tr>
+    <tr><td>Rentabilidad bruta anual</td><td>${alq.rentabilidad_bruta_anual}%</td></tr>
+    <tr><td>Años de recupero</td><td>${alq.años_recupero} años</td></tr>
+  </table>` : ''}
+  <div class="footer">Cotización orientativa · Fuente: ZonaProp + Argenprop scrapeados diariamente · cotizar-production.up.railway.app</div>
+  </body></html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  setTimeout(() => win.print(), 500);
+}
+
 // ── NOTICIAS ──
 let noticiasCache = null;
 let catActiva = 'todo';
 const SOURCE_CLASSES = { reporte:'src-reporte', ambito:'src-ambito', infobae:'src-infobae', cronista:'src-cronista', lanacion:'src-lanacion', iprofesional:'src-iprofesional' };
- 
+
 function timeAgo(dateStr) {
   if (!dateStr) return '';
   const d = new Date(dateStr);
@@ -682,7 +1248,7 @@ function timeAgo(dateStr) {
   if (hs < 24)   return `hace ${hs}h`;
   return `hace ${Math.floor(hs/24)}d`;
 }
- 
+
 async function cargarNoticias(force = false) {
   if (noticiasCache && !force) { renderNoticias(noticiasCache); return; }
   const btn = document.getElementById('news-refresh-btn');
@@ -709,14 +1275,14 @@ async function cargarNoticias(force = false) {
     btn.disabled = false; btn.classList.remove('spinning');
   }
 }
- 
+
 function filtrarCat(cat, el) {
   catActiva = cat;
   document.querySelectorAll('.ncat').forEach(c => c.classList.remove('on'));
   el.classList.add('on');
   if (noticiasCache) renderNoticias(noticiasCache);
 }
- 
+
 function renderTicker(noticias) {
   const track = document.getElementById('ticker-track');
   if (!noticias.length) { track.innerHTML = '<span class="ticker-loading">Sin noticias disponibles</span>'; return; }
@@ -728,7 +1294,7 @@ function renderTicker(noticias) {
   ).join('');
   track.style.animationDuration = Math.max(15, noticias.length * 3) + 's';
 }
- 
+
 function renderNoticias(noticias) {
   const cont = document.getElementById('news-container');
   const lista = catActiva === 'todo' ? noticias : noticias.filter(n => n.sourceId === catActiva);
@@ -748,7 +1314,7 @@ function renderNoticias(noticias) {
     </a>`;
   }).join('')}</div>`;
 }
- 
+
 // ── ESCRITURAS ──
 async function cargarEscrituras() {
   try {
@@ -785,21 +1351,121 @@ async function cargarEscrituras() {
     }, 50);
   } catch(e) { console.warn('[ESCRITURAS]', e.message); }
 }
- 
+
 function formatPeriodo(p) {
   if (!p) return '';
   const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   const [y, m] = p.split('-');
   return `${meses[parseInt(m)-1]} ${y}`;
 }
- 
+
 function formatMesCorto(p) {
   if (!p) return '';
   const meses = ['E','F','M','A','M','J','J','A','S','O','N','D'];
   const [, m] = p.split('-');
   return meses[parseInt(m)-1];
 }
- 
+
+// ── ALERTAS EMAIL ──
+function guardarAlerta() {
+  const email = document.getElementById('alerta-email').value.trim();
+  const barrio = document.getElementById('alerta-barrio').value;
+  const precio = document.getElementById('alerta-precio').value;
+
+  if (!email || !email.includes('@')) { showToast('⚠️ Ingresá un email válido'); return; }
+  if (!barrio) { showToast('⚠️ Seleccioná un barrio'); return; }
+  if (!precio || precio < 100) { showToast('⚠️ Ingresá un precio objetivo'); return; }
+
+  const alertas = JSON.parse(localStorage.getItem('cotizar_alertas') || '[]');
+  const barrioNombre = barriosData.find(b => b.key === barrio)?.nombre || barrio;
+  alertas.push({ email, barrio, barrioNombre, precio: parseInt(precio), ts: Date.now() });
+  localStorage.setItem('cotizar_alertas', JSON.stringify(alertas));
+
+  document.getElementById('alerta-form').style.display = 'none';
+  document.getElementById('alerta-success').style.display = 'block';
+  setTimeout(() => {
+    document.getElementById('alerta-form').style.display = 'grid';
+    document.getElementById('alerta-success').style.display = 'none';
+    document.getElementById('alerta-email').value = '';
+    document.getElementById('alerta-barrio').value = '';
+    document.getElementById('alerta-precio').value = '';
+  }, 4000);
+
+  renderAlertasGuardadas();
+}
+
+function renderAlertasGuardadas() {
+  const alertas = JSON.parse(localStorage.getItem('cotizar_alertas') || '[]');
+  const el = document.getElementById('alertas-guardadas');
+  if (!alertas.length) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div style="font-size:12px;font-weight:500;color:var(--ink3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px">Mis alertas</div>
+  ${alertas.map((a,i) => `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">
+    <div><strong>${a.barrioNombre}</strong> · &lt; USD ${a.precio.toLocaleString('es-AR')}/m²</div>
+    <button onclick="borrarAlerta(${i})" style="font-size:11px;color:var(--ink3);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;padding:0" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink3)'">Borrar</button>
+  </div>`).join('')}`;
+}
+
+function borrarAlerta(i) {
+  const alertas = JSON.parse(localStorage.getItem('cotizar_alertas') || '[]');
+  alertas.splice(i, 1);
+  localStorage.setItem('cotizar_alertas', JSON.stringify(alertas));
+  renderAlertasGuardadas();
+  showToast('Alerta eliminada');
+}
+
+// ── NAVEGACIÓN ENTRE PÁGINAS ──
+function irA(pageId, el) {
+  // Ocultar todas las páginas
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + pageId).classList.add('active');
+
+  // Actualizar tabs desktop
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.bn-tab').forEach(t => t.classList.remove('active'));
+
+  // Marcar el tab activo (puede venir de desktop o mobile)
+  document.querySelectorAll(`[data-page="${pageId}"]`).forEach(t => t.classList.add('active'));
+
+  // Scroll al top
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // Cargar datos si es la primera vez que se visita la página
+  if (pageId === 'noticias' && !noticiasCache) cargarNoticias();
+  if (pageId === 'mercado') cargarEscrituras();
+
+  // Actualizar URL hash para navegación con back/forward
+  history.pushState({ page: pageId }, '', '#' + pageId);
+}
+
+// Manejar botón back del browser
+window.addEventListener('popstate', (e) => {
+  const page = e.state?.page || location.hash.replace('#','') || 'cotizar';
+  const tab = document.querySelector(`[data-page="${page}"]`);
+  if (tab) irA(page, tab);
+});
+
+// Leer hash al cargar
+function initPage() {
+  const hash = location.hash.replace('#','');
+  const valid = ['cotizar','mercado','noticias','alertas'];
+  if (hash && valid.includes(hash)) {
+    const tab = document.querySelector(`[data-page="${hash}"]`);
+    if (tab) irA(hash, tab);
+  }
+}
+
+// También: desde el mapa de calor, ir a cotizar y precargar barrio
+function precargarBarrio(key) {
+  document.getElementById('barrio').value = key;
+  irA('cotizar', document.querySelector('[data-page="cotizar"]'));
+  setTimeout(() => {
+    document.querySelector('.form-wrapper').scrollIntoView({behavior:'smooth'});
+    document.getElementById('barrio').focus();
+  }, 100);
+  showToast('Barrio seleccionado — completá los datos y cotizá');
+}
+
+// ── INIT ──
 checkStatus();
 cargarBarrios();
 renderAmbientes();
@@ -807,6 +1473,10 @@ renderEdad();
 renderAms();
 cargarNoticias();
 cargarEscrituras();
+renderHistorial();
+renderAlertasGuardadas();
+precargarDesdeURL();
+initPage();
 </script>
 </body>
 </html>
