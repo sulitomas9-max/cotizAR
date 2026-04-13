@@ -1093,6 +1093,7 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+
 // ─────────────────────────────────────────────
 // START
 // ─────────────────────────────────────────────
@@ -1115,4 +1116,20 @@ initDB().then(async () => {
   fetchEscrituras().then(result => {
     if (result.ok) { escriturasCache = result; escriturasCacheTs = Date.now(); }
   }).catch(err => console.warn('[INICIO] Escrituras:', err.message));
+
+  // ── CRON DIARIO: scraping de precios todos los días a las 3am ──
+  // Formato: minuto hora * * * (todos los días)
+  cron.schedule('0 3 * * *', async () => {
+    console.log('\n[CRON DIARIO] Iniciando scraping de precios...');
+    try {
+      const resultados = await scrapeAll();
+      const total = Object.keys(resultados).length;
+      const conDatos = Object.values(resultados).filter(b => b.muestras > 0).length;
+      console.log(`[CRON DIARIO] ✅ Completado: ${conDatos}/${total} barrios con datos frescos`);
+    } catch(err) {
+      console.error('[CRON DIARIO] ❌ Error:', err.message);
+    }
+  }, { timezone: 'America/Argentina/Buenos_Aires' });
+
+  console.log('[CRON] Scraping diario programado: todos los días a las 3:00 AM (Buenos Aires)');
 });
