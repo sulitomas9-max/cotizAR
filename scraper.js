@@ -15,13 +15,12 @@ const { guardarResultados, cargarDatos } = require('./db');
 
 // ─────────────────────────────────────────────
 // CATEGORÍAS MERCADOLIBRE
-// MLA1472 = Departamentos (Argentina)
-// Búsqueda por barrio usando el parámetro neighborhood
+// MLA1472 = Departamentos en venta
+// MLA1476 = Departamentos en alquiler
 // ─────────────────────────────────────────────
-const ML_BASE    = 'https://api.mercadolibre.com';
-const ML_SITE    = 'MLA';
-const ML_CAT_DEP = 'MLA1472'; // Departamentos
-const ML_ESTADO  = 'TUxBUENBUGw3M2JR'; // Capital Federal (ID codificado en base64)
+const ML_BASE     = 'https://api.mercadolibre.com';
+const ML_CAT_VENTA   = 'MLA1472'; // Departamentos en venta
+const ML_CAT_ALQUIER = 'MLA1476'; // Departamentos en alquiler
 
 // ─────────────────────────────────────────────
 // BARRIOS — 48 barrios oficiales CABA
@@ -96,64 +95,56 @@ const HEADERS = {
 // ─────────────────────────────────────────────
 async function buscarVentaML(barrio) {
   const precios = [];
-  let offset = 0;
-  const limite = 50; // ML permite hasta 50 por request
-  const maxItems = 200; // analizar hasta 200 avisos por barrio
 
-  try {
-    while (offset < maxItems) {
-      const url = `${ML_BASE}/sites/${ML_SITE}/search` +
-        `?category=${ML_CAT_DEP}` +
-        `&state=${ML_ESTADO}` +
-        `&q=${encodeURIComponent(barrio.mlNombre)}` +
-        `&OPERATION=242073` + // Venta
-        `&limit=${limite}&offset=${offset}`;
+  // Intentar con diferentes categorías — MercadoLibre tiene
+  // la estructura de categorías dividida por tipo de operación
+  const categorias = ['MLA1472', 'MLA401686', 'MLA50548'];
+  let itemsTotal = 0;
+
+  for (const cat of categorias) {
+    try {
+      const url = `${ML_BASE}/sites/MLA/search` +
+        `?category=${cat}` +
+        `&q=${encodeURIComponent(barrio.mlNombre + ' Capital Federal')}` +
+        `&limit=50&offset=0`;
 
       const { data } = await axios.get(url, { headers: HEADERS, timeout: 15000 });
       const items = data?.results || [];
-      if (!items.length) break;
+      itemsTotal += items.length;
 
       items.forEach(item => {
         try {
           const precio = item.price;
           const moneda = item.currency_id;
-          // Solo USD (inmuebles en CABA se publican en USD)
           if (!precio || moneda !== 'USD') return;
+          if (precio < 20000 || precio > 5000000) return;
 
-          // Buscar superficie en atributos
           const attrs = item.attributes || [];
           const supAttr = attrs.find(a =>
             a.id === 'TOTAL_AREA' || a.id === 'COVERED_AREA' ||
-            a.name?.toLowerCase().includes('superficie') ||
-            a.name?.toLowerCase().includes('m2') ||
-            a.name?.toLowerCase().includes('metros')
+            a.id === 'SURFACE_TOTAL' || a.id === 'SURFACE_COVERED'
           );
-
           let sup = supAttr ? parseFloat(supAttr.value_name) : null;
-
-          // Fallback: extraer m² del título
           if (!sup) {
-            const m = (item.title || '').match(/(\d+)\s*m[²2]/i);
-            if (m) sup = parseFloat(m[1]);
+            const match = (item.title || '').match(/(\d+)\s*m[²2²]/i);
+            if (match) sup = parseFloat(match[1]);
           }
-
           if (!sup || sup < 15 || sup > 800) return;
-          if (precio < 20000 || precio > 5000000) return;
 
           const m2 = Math.round(precio / sup);
           if (m2 > 500 && m2 < 15000) precios.push(m2);
         } catch(e) {}
       });
 
-      // Si vinieron menos items que el límite, no hay más páginas
-      if (items.length < limite) break;
-      offset += limite;
-
-      // Pausa entre páginas
-      await new Promise(r => setTimeout(r, 300));
+      if (precios.length >= 5) break; // suficientes datos, no seguir
+    } catch(err) {
+      console.warn(`  [ML venta ${cat}] ${barrio.nombre}: ${err.message}`);
     }
-  } catch(err) {
-    console.warn(`  [ML venta] ${barrio.nombre}: ${err.message}`);
+    await new Promise(r => setTimeout(r, 200));
+  }
+
+  if (itemsTotal === 0) {
+    console.warn(`  [ML venta] ${barrio.nombre}: API no devolvió resultados`);
   }
 
   return precios;
@@ -166,11 +157,9 @@ async function buscarAlquilerML(barrio) {
   const precios = [];
 
   try {
-    const url = `${ML_BASE}/sites/${ML_SITE}/search` +
-      `?category=${ML_CAT_DEP}` +
-      `&state=${ML_ESTADO}` +
-      `&q=${encodeURIComponent(barrio.mlNombre)}` +
-      `&OPERATION=242074` + // Alquiler
+    const url = `${ML_BASE}/sites/MLA/search` +
+      `?category=${ML_CAT_ALQUIER}` +
+      `&q=${encodeURIComponent('departamento ' + barrio.mlNombre + ' Capital Federal')}` +
       `&limit=50&offset=0`;
 
     const { data } = await axios.get(url, { headers: HEADERS, timeout: 15000 });
@@ -180,22 +169,18 @@ async function buscarAlquilerML(barrio) {
       try {
         const precio = item.price;
         const moneda = item.currency_id;
-        // Alquileres en ARS
         if (!precio || moneda !== 'ARS') return;
         if (precio < 100000 || precio > 50000000) return;
 
         const attrs = item.attributes || [];
         const supAttr = attrs.find(a =>
-          a.id === 'TOTAL_AREA' || a.id === 'COVERED_AREA' ||
-          a.name?.toLowerCase().includes('superficie')
+          a.id === 'TOTAL_AREA' || a.id === 'COVERED_AREA'
         );
-
         let sup = supAttr ? parseFloat(supAttr.value_name) : null;
         if (!sup) {
-          const m = (item.title || '').match(/(\d+)\s*m[²2]/i);
-          if (m) sup = parseFloat(m[1]);
+          const match = (item.title || '').match(/(\d+)\s*m[²2]/i);
+          if (match) sup = parseFloat(match[1]);
         }
-
         if (!sup || sup < 20 || sup > 300) return;
 
         const m2mes = Math.round(precio / sup);
@@ -235,6 +220,23 @@ async function scrapeAll() {
   console.log('  CotizAR — Actualizando precios desde MercadoLibre');
   console.log(`  ${new Date().toLocaleString('es-AR')}`);
   console.log('═══════════════════════════════════════════════════\n');
+
+  // ── TEST DIAGNÓSTICO: verificar que la API responde ──
+  try {
+    const testUrl = `${ML_BASE}/sites/MLA/search?category=MLA1472&q=departamento+Palermo&limit=1`;
+    const { data } = await axios.get(testUrl, { headers: HEADERS, timeout: 10000 });
+    const total = data?.paging?.total || 0;
+    const primer = data?.results?.[0];
+    console.log(`[TEST API] MercadoLibre responde OK — ${total} resultados para Palermo`);
+    if (primer) {
+      console.log(`[TEST API] Primer item: "${primer.title}" | USD ${primer.price} | moneda: ${primer.currency_id}`);
+      console.log(`[TEST API] Atributos: ${primer.attributes?.map(a=>a.id).join(', ') || 'ninguno'}`);
+    }
+  } catch(err) {
+    console.error(`[TEST API] ❌ MercadoLibre no responde: ${err.message}`);
+    console.error('[TEST API] Abortando scraping — usando datos de cache');
+    return {};
+  }
 
   const resultados  = {};
   const timestamp   = new Date().toISOString();
